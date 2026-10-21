@@ -13,7 +13,7 @@
  * everyone else's score.
  */
 import { dedupe } from './dedupe';
-import type { Filters, Priority } from './filters';
+import { BUSY_ROAD_SAFETY, effectiveRadiusKm, type Filters, type Priority } from './filters';
 import type { Climb } from './types';
 
 export type FactorKey = 'steepness' | 'gain' | 'length' | 'proximity' | 'trail' | 'safety' | 'lit';
@@ -69,7 +69,7 @@ export function scoreClimbs(climbs: Climb[], filters: Filters): RankedClimb[] {
   const refGrade = Math.max(3, percentile(climbs.map((c) => c.avgGrade), 0.9));
   const refGain = Math.max(10, percentile(climbs.map((c) => c.gain), 0.9));
   const refLength = Math.max(200, percentile(climbs.map((c) => c.length), 0.9));
-  const radius = filters.radiusKm * 1000;
+  const radius = effectiveRadiusKm(filters) * 1000;
 
   return climbs.map((c) => {
     const values: Record<FactorKey, number> = {
@@ -91,13 +91,14 @@ export function scoreClimbs(climbs: Climb[], filters: Filters): RankedClimb[] {
 
 /** Hard filters, as a predicate. */
 export function passes(c: Climb, f: Filters): boolean {
-  if (c.distance > f.radiusKm * 1000) return false;
+  if (c.distance > effectiveRadiusKm(f) * 1000) return false;
   if (c.length < f.minLength || c.length > f.maxLength) return false;
   if (c.gain < f.minGain) return false;
   if (c.avgGrade < f.minAvgGrade || c.avgGrade > f.maxAvgGrade) return false;
   if (f.maxGrade !== null && c.maxGrade > f.maxGrade) return false;
   if (f.surface === 'trail' && c.trail < 0.5) return false;
   if (f.surface === 'road' && c.trail > 0.5) return false;
+  if (f.avoidTraffic && c.safety < BUSY_ROAD_SAFETY) return false;
   return true;
 }
 
@@ -125,6 +126,7 @@ function relaxations(f: Filters): Filters[] {
       maxAvgGrade: Infinity,
       maxGrade: null,
       surface: 'any',
+      avoidTraffic: false,
     },
   ];
 }

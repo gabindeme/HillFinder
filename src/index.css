@@ -180,21 +180,40 @@ button.link {
 
 .filters {
   display: flex;
-  gap: 1rem;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.filters-main {
+  display: flex;
+  gap: 0.75rem;
   flex-wrap: wrap;
   align-items: end;
 }
 
-.filters label {
+.filters label,
+.filters fieldset {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
   font-size: 0.875rem;
 }
 
-.filters .radius {
+.filters fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.filters legend {
+  padding: 0;
+  margin-bottom: 0.25rem;
+}
+
+.filters .range {
   flex: 1;
-  min-width: 160px;
+  min-width: 170px;
 }
 
 .filters input[type='range'] {
@@ -208,6 +227,147 @@ button.link {
   border: 1px solid var(--border);
   background: var(--card);
   min-height: 44px;
+}
+
+.segmented,
+.filters fieldset.segmented {
+  display: flex;
+  flex-direction: row;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--card);
+  width: 100%;
+}
+
+.segmented button {
+  flex: 1;
+  border-radius: 0;
+  background: none;
+  color: var(--text);
+  padding: 0.5rem 0.4rem;
+  font-size: 0.85rem;
+}
+
+.segmented button + button {
+  border-left: 1px solid var(--border);
+}
+
+.segmented button[aria-pressed='true'] {
+  background: var(--green);
+  color: #fff;
+}
+
+.more-filters {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0 0.75rem;
+}
+
+.more-filters[open] {
+  padding-bottom: 0.5rem;
+}
+
+.more-filters summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--green);
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.badge {
+  background: var(--green);
+  color: #fff;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  padding: 0 0.45rem;
+  line-height: 1.4;
+}
+
+.more-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.9rem 0.75rem;
+  padding: 0.25rem 0 0.75rem;
+}
+
+.more-grid .field:has(.segmented),
+.more-grid .wide {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 360px) {
+  .more-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.minmax {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.number {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  padding-right: 0.4rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.number input {
+  border: 0;
+  background: none;
+  width: 100%;
+  min-width: 0;
+  padding: 0.55rem 0.2rem 0.55rem 0.5rem;
+  min-height: 40px;
+  /* Spinner arrows eat the room needed for "2000" on phones; typing is easier anyway. */
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.number input::-webkit-inner-spin-button,
+.number input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.unit {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.filters .check {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+.check input {
+  width: 22px;
+  height: 22px;
+  accent-color: var(--green);
+  flex-shrink: 0;
+  margin: 0;
+}
+
+.check span {
+  display: flex;
+  flex-direction: column;
+}
+
+.check.disabled {
+  opacity: 0.55;
 }
 
 .status {

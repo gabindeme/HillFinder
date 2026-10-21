@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { detectClimbs, maxGrade, scanAscents } from './climbs';
 import { dedupe } from './dedupe';
-import { DEFAULT_FILTERS } from './filters';
+import { activeFilterCount, DEFAULT_FILTERS, effectiveRadiusKm } from './filters';
 import { buildStrokes, splitIntoEdges } from './graph';
 import { labelUnnamed, stitchRings } from './naming';
 import { findCandidates } from './pipeline';
 import { reverseProfile, STEP, strokeProfiles } from './profile';
-import { rankClimbs } from './scoring';
+import { passes, rankClimbs } from './scoring';
 import { estimateRepSeconds, suggestSession } from './session';
 import { classifyWay } from './tags';
 import type { Climb, LatLon, OsmWay, Profile } from './types';
@@ -193,5 +193,25 @@ describe('stitchRings', () => {
     const rings = stitchRings([[a, b], [c, b], [c, d, a]]);
     expect(rings).toHaveLength(1);
     expect(rings[0]).toHaveLength(5);
+  });
+});
+
+describe('filters', () => {
+  it('turns travel time into a straight-line radius', () => {
+    expect(effectiveRadiusKm({ ...DEFAULT_FILTERS, reach: 'distance', radiusKm: 7 })).toBe(7);
+    // 15 min running at 10 km/h = 2.5 km of route ≈ 1.9 km straight line
+    expect(effectiveRadiusKm({ ...DEFAULT_FILTERS, reach: 'foot', travelMinutes: 15 })).toBeCloseTo(1.9, 1);
+    expect(effectiveRadiusKm({ ...DEFAULT_FILTERS, reach: 'bike', travelMinutes: 15 })).toBeGreaterThan(3);
+  });
+
+  it('counts only the advanced filters the user changed', () => {
+    expect(activeFilterCount(DEFAULT_FILTERS)).toBe(0);
+    expect(activeFilterCount({ ...DEFAULT_FILTERS, surface: 'trail', minGain: 20, radiusKm: 12 })).toBe(2);
+  });
+
+  it('excludes busy roads when avoiding traffic, unless nothing else exists', () => {
+    const busy = { distance: 100, length: 300, gain: 20, avgGrade: 6.7, maxGrade: 8, trail: 0, safety: 0.1 } as Climb;
+    expect(passes(busy, { ...DEFAULT_FILTERS, avoidTraffic: true })).toBe(false);
+    expect(passes(busy, { ...DEFAULT_FILTERS, avoidTraffic: false })).toBe(true);
   });
 });

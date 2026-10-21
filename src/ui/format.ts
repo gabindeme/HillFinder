@@ -1,4 +1,5 @@
 import type { TFunction } from 'i18next';
+import { travelMinutesTo, type Reach } from '../core/filters';
 import type { Climb } from '../core/types';
 
 export const fmtM = (m: number) => `${Math.round(m)} m`;
@@ -33,4 +34,11 @@ export function gradeColor(grade: number): string {
   if (grade < 9) return '#fb8c00';
   if (grade < 12) return '#e53935';
   return '#8e24aa';
+}
+
+/** "1.2 km away", or a travel-time estimate when searching by time. */
+export function fmtAway(c: Climb, reach: Reach, t: TFunction): string {
+  if (reach === 'distance') return t('climb.away', { km: fmtKm(c.distance) });
+  const min = Math.max(1, Math.round(travelMinutesTo(c.distance, reach)));
+  return t(reach === 'foot' ? 'climb.awayFoot' : 'climb.awayBike', { min });
 }

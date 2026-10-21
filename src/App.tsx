@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { effectiveRadiusKm, type Filters } from './core/filters';
 import { rankClimbs } from './core/scoring';
 import type { Climb } from './core/types';
 import type { Place } from './data/nominatim';
@@ -26,7 +27,7 @@ export default function App() {
   const [filters, setFilters] = useFilters();
   // Radius the current candidates were searched with. Shrinking the slider
   // just filters them; growing it beyond this triggers a new search.
-  const searchRadius = useRef(filters.radiusKm);
+  const searchRadius = useRef(effectiveRadiusKm(filters));
   const [candidates, setCandidates] = useState<Climb[] | null>(null);
   const [resolution, setResolution] = useState<number | null>(null);
   const [status, setStatus] = useState<Status>({ kind: 'idle' });
@@ -61,12 +62,16 @@ export default function App() {
 
   const onPlace = (place: Place) => {
     setOrigin(place);
-    void run(place, filters.radiusKm);
+    void run(place, effectiveRadiusKm(filters));
   };
 
-  const onRadiusCommit = (km: number) => {
+  const onAreaCommit = (f: Filters) => {
+    const km = effectiveRadiusKm(f);
     if (origin && km > searchRadius.current) void run(origin, km);
   };
+  const radiusKm = effectiveRadiusKm(filters);
+  // Lighting comes from OSM `lit` tags, available with the detailed data source.
+  const hasLighting = true;
 
   const ranked = useMemo(() => (candidates ? rankClimbs(candidates, filters) : null), [candidates, filters]);
   const selected = ranked?.climbs.find((c) => c.id === selectedId) ?? null;
@@ -87,7 +92,7 @@ export default function App() {
           )}
         </header>
 
-        <FilterBar filters={filters} onChange={setFilters} onRadiusCommit={onRadiusCommit} />
+        <FilterBar filters={filters} onChange={setFilters} onAreaCommit={onAreaCommit} hasLighting={hasLighting} />
 
         <div className="results" aria-live="polite">
           {status.kind === 'loading' && <StatusLine progress={status.progress} />}
@@ -105,15 +110,20 @@ export default function App() {
                 <p className="message">{t('status.empty')}</p>
               ) : (
                 <p className="muted">
-                  {t('status.found', { count: ranked.climbs.length, radius: filters.radiusKm })}
+                  {t('status.found', { count: ranked.climbs.length, radius: radiusKm })}
                   {ranked.relaxLevel > 0 && <> · {t('status.relaxed')}</>}
                 </p>
               )}
               {status.partial && <p className="message">{t('status.partial')}</p>}
-              <ClimbList climbs={ranked.climbs} onSelect={setSelectedId} />
+              <ClimbList climbs={ranked.climbs} reach={filters.reach} onSelect={setSelectedId} />
             </>
           )}
-          {status.kind === 'done' && selected && <ClimbDetail climb={selected} onBack={() => setSelectedId(null)} />}
+          {status.kind === 'done' && selected && <ClimbDetail
+              climb={selected}
+              reach={filters.reach}
+              showLit={hasLighting && filters.preferLit}
+              onBack={() => setSelectedId(null)}
+            />}
         </div>
 
         <footer className="footer muted">
@@ -124,7 +134,7 @@ export default function App() {
 
       <MapView
         origin={origin}
-        radiusKm={filters.radiusKm}
+        radiusKm={radiusKm}
         climbs={ranked?.climbs ?? []}
         selectedId={selectedId}
         onSelect={setSelectedId}

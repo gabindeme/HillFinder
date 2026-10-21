@@ -1,15 +1,19 @@
 import { useTranslation } from 'react-i18next';
+import type { Reach } from '../core/filters';
 import type { RankedClimb } from '../core/scoring';
 import { suggestSession } from '../core/session';
-import { climbName, fmtDuration, fmtGrade, fmtKm, fmtM, surfaceLabel } from './format';
+import { climbName, fmtAway, fmtDuration, fmtGrade, fmtM, surfaceLabel } from './format';
 import { ProfileChart } from './ProfileChart';
 
 interface Props {
   climb: RankedClimb;
+  reach: Reach;
+  /** Show the share of lit path (only meaningful when the data has lighting info). */
+  showLit: boolean;
   onBack: () => void;
 }
 
-export function ClimbDetail({ climb, onBack }: Props) {
+export function ClimbDetail({ climb, reach, showLit, onBack }: Props) {
   const { t } = useTranslation();
   const session = suggestSession(climb);
   const start = climb.coords[0];
@@ -25,7 +29,8 @@ export function ClimbDetail({ climb, onBack }: Props) {
         <span className="rank-inline">#{climb.rank}</span> {climbName(climb, t)}
       </h2>
       <p className="climb-meta">
-        {t('climb.away', { km: fmtKm(climb.distance) })} · {surfaceLabel(climb, t)} ·{' '}
+        {fmtAway(climb, reach, t)} · {surfaceLabel(climb, t)} ·{' '}
+        {showLit && <>{t('climb.lit', { pct: Math.round(climb.lit * 100) })} · </>}
         <a href={directions} target="_blank" rel="noreferrer">
           {t('climb.openMaps')}
         </a>

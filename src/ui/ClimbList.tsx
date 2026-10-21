@@ -1,13 +1,15 @@
 import { useTranslation } from 'react-i18next';
+import type { Reach } from '../core/filters';
 import type { RankedClimb } from '../core/scoring';
-import { climbName, fmtGrade, fmtKm, fmtM, gradeColor, surfaceLabel } from './format';
+import { climbName, fmtAway, fmtGrade, fmtM, gradeColor, surfaceLabel } from './format';
 
 interface Props {
   climbs: RankedClimb[];
+  reach: Reach;
   onSelect: (id: string) => void;
 }
 
-export function ClimbList({ climbs, onSelect }: Props) {
+export function ClimbList({ climbs, reach, onSelect }: Props) {
   const { t } = useTranslation();
   return (
     <ol className="climb-list">
@@ -24,7 +26,7 @@ export function ClimbList({ climbs, onSelect }: Props) {
                 {fmtGrade(c.maxGrade)})
               </span>
               <span className="climb-meta">
-                {t('climb.away', { km: fmtKm(c.distance) })} · {surfaceLabel(c, t)}
+                {fmtAway(c, reach, t)} · {surfaceLabel(c, t)}
               </span>
             </span>
             <span className="score" title={t('climb.score')}>

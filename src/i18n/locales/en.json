@@ -29,7 +29,35 @@
       "gain": "Most elevation gain",
       "closest": "Closest",
       "trail": "Most trail-like"
-    }
+    },
+    "reach": "Search area",
+    "reaches": {
+      "distance": "Distance",
+      "foot": "Run there",
+      "bike": "Bike there"
+    },
+    "travelTime": "Max travel",
+    "minutes": "{{n}} min",
+    "approxRadius": "(≈ {{km}} km)",
+    "more": "More filters",
+    "length": "Climb length",
+    "avgGrade": "Average gradient",
+    "minGain": "Minimum elevation gain",
+    "maxGrade": "Cap the steepest section",
+    "surface": "Surface",
+    "surfaces": {
+      "any": "Any",
+      "trail": "Trail / dirt",
+      "road": "Road / paved"
+    },
+    "avoidTraffic": "Avoid busy roads",
+    "avoidTrafficHint": "Prefer paths, parks and quiet streets",
+    "preferLit": "Prefer lit paths",
+    "preferLitHint": "For evening runs",
+    "noLighting": "Not available with the fast data source",
+    "reset": "Reset filters",
+    "min": "Minimum",
+    "max": "Maximum"
   },
   "status": {
     "download": "Downloading paths & elevation ({{done}}/{{total}})…",
@@ -74,7 +102,10 @@
     "back": "All climbs",
     "openMaps": "Directions",
     "why": "Why this score",
-    "profile": "Elevation profile"
+    "profile": "Elevation profile",
+    "awayFoot": "≈ {{min}} min run away",
+    "awayBike": "≈ {{min}} min by bike",
+    "lit": "{{pct}}% lit"
   },
   "factors": {
     "steepness": "Steepness",
