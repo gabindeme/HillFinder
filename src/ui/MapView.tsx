@@ -44,6 +44,8 @@ interface Props {
   radiusKm: number;
   climbs: RankedClimb[];
   selectedId: string | null;
+  /** Rep section of the selected climb, metres from its bottom (highlighted). */
+  section: { from: number; to: number } | null;
   /** A search is running: the origin marker pulses. */
   searching: boolean;
   onSelect: (id: string) => void;
@@ -79,7 +81,7 @@ function circle(center: LatLon, radiusKm: number): Feature {
 
 const empty: FeatureCollection = { type: 'FeatureCollection', features: [] };
 
-export function MapView({ origin, radiusKm, climbs, selectedId, searching, onSelect }: Props) {
+export function MapView({ origin, radiusKm, climbs, selectedId, section, searching, onSelect }: Props) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const markers = useRef<Marker[]>([]);
@@ -105,6 +107,12 @@ export function MapView({ origin, radiusKm, climbs, selectedId, searching, onSel
     map.on('load', () => {
       map.addSource('radius', { type: 'geojson', data: empty });
       map.addLayer({ id: 'radius', type: 'line', source: 'radius', paint: { 'line-color': '#1565c0', 'line-width': 1.5, 'line-dasharray': [3, 2] } });
+      map.addSource('section', { type: 'geojson', data: empty });
+      // Wide translucent band under the selected climb's rep section.
+      map.addLayer({
+        id: 'section', type: 'line', source: 'section', layout: { 'line-cap': 'round', 'line-join': 'round' },
+        paint: { 'line-color': '#1565c0', 'line-width': 20, 'line-opacity': 0.3 },
+      });
       map.addSource('climbs', { type: 'geojson', data: empty });
       // White casing under the coloured line keeps climbs readable on any background.
       map.addLayer({
@@ -151,6 +159,10 @@ export function MapView({ origin, radiusKm, climbs, selectedId, searching, onSel
     whenLoaded(apply);
   }, [origin, radiusKm]);
 
+  // Numbers rather than the object, so a new object with equal values doesn't refit the map.
+  const sectionFrom = section?.from;
+  const sectionTo = section?.to;
+
   // Climbs + selection.
   useEffect(() => {
     const map = mapRef.current;
@@ -175,6 +187,15 @@ export function MapView({ origin, radiusKm, climbs, selectedId, searching, onSel
         return new Marker({ element: el }).setLngLat([c.coords[0].lon, c.coords[0].lat]).addTo(map);
       });
       const sel = climbs.find((c) => c.id === selectedId);
+      const part =
+        sel && sectionFrom !== undefined && sectionTo !== undefined
+          ? sel.coords.filter((_, i) => sel.profile.dist[i] >= sectionFrom && sel.profile.dist[i] <= sectionTo)
+          : [];
+      (map.getSource('section') as GeoJSONSource).setData(
+        part.length >= 2 && part.length < (sel?.coords.length ?? 0)
+          ? { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: part.map((p) => [p.lon, p.lat]) } }
+          : empty,
+      );
       if (sel) {
         const lons = sel.coords.map((p) => p.lon);
         const lats = sel.coords.map((p) => p.lat);
@@ -185,7 +206,7 @@ export function MapView({ origin, radiusKm, climbs, selectedId, searching, onSel
       }
     };
     whenLoaded(apply);
-  }, [climbs, selectedId]);
+  }, [climbs, selectedId, sectionFrom, sectionTo]);
 
   useEffect(() => {
     originMarker.current?.getElement().classList.toggle('searching', searching);

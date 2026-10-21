@@ -11,9 +11,9 @@ const NO_ACCESS = new Set(['private', 'no']);
 const FOOT_OK = new Set(['yes', 'designated', 'permissive']);
 const SKIP_SERVICE = new Set(['driveway', 'parking_aisle', 'drive-through']);
 
-export function isRunnable(tags: Tags): boolean {
+export function isRunnable(tags: Tags, includeStairs = false): boolean {
   const hw = tags.highway;
-  if (!hw || !RUNNABLE.has(hw)) return false;
+  if (!hw || !(RUNNABLE.has(hw) || (includeStairs && hw === 'steps'))) return false;
   if (tags.area === 'yes') return false;
   if (tags.foot === 'no') return false;
   if (tags.access && NO_ACCESS.has(tags.access) && !(tags.foot && FOOT_OK.has(tags.foot))) return false;
@@ -35,13 +35,13 @@ const UNPAVED = new Set([
  * tracks are usually unpaved in France; urban footways usually aren't.
  */
 const TRAIL_DEFAULT: Record<string, number> = {
-  track: 0.85, path: 0.8, bridleway: 0.85, footway: 0.35, cycleway: 0.15, pedestrian: 0.1,
+  track: 0.85, path: 0.8, bridleway: 0.85, footway: 0.35, cycleway: 0.15, pedestrian: 0.1, steps: 0,
 };
 
 /** Rough car exposure by highway type: 1 = no cars, 0 = busy road. */
 const SAFETY: Record<string, number> = {
   path: 1, footway: 1, track: 0.95, bridleway: 1, cycleway: 0.95, pedestrian: 1,
-  living_street: 0.9, service: 0.8, residential: 0.75, unclassified: 0.6,
+  living_street: 0.9, service: 0.8, residential: 0.75, unclassified: 0.6, steps: 1,
   tertiary: 0.4, secondary: 0.2, primary: 0.05,
 };
 
@@ -64,5 +64,13 @@ export function classifyWay(id: number, tags: Tags): WayAttrs {
   const lit = tags.lit === 'yes' ? 1 : tags.lit === 'no' ? 0 : 0.5;
   const offTerrain = (!!tags.bridge && tags.bridge !== 'no') || (!!tags.tunnel && tags.tunnel !== 'no');
 
-  return { wayId: id, name: tags.name ?? null, highway: hw, trail, safety: Math.min(1, safety), lit, offTerrain };
+  const stepCount = Number.parseInt(tags.step_count ?? '', 10);
+  // incline=12% / -8% / 12 are slopes; "up"/"down" only give a direction.
+  const inclineMatch = /^-?(\d+(?:\.\d+)?)\s*%?$/.exec(tags.incline ?? '');
+  return {
+    wayId: id, name: tags.name ?? null, highway: hw, trail, safety: Math.min(1, safety), lit, offTerrain,
+    stairs: hw === 'steps',
+    stepCount: stepCount > 0 ? stepCount : undefined,
+    incline: inclineMatch ? Number(inclineMatch[1]) : undefined,
+  };
 }

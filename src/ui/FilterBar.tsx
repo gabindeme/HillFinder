@@ -170,6 +170,14 @@ export function FilterBar({ filters, onChange, onAreaCommit, source, onSource }:
             </span>
           </label>
 
+          <label className="check wide">
+            <input type="checkbox" checked={filters.includeStairs} onChange={(e) => set('includeStairs', e.target.checked)} />
+            <span>
+              {t('filters.includeStairs')}
+              <small className="muted">{t('filters.includeStairsHint')}</small>
+            </span>
+          </label>
+
           <label className={`check wide${hasLighting ? '' : ' disabled'}`}>
             <input
               type="checkbox"

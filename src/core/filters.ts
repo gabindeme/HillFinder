@@ -23,6 +23,8 @@ export interface Filters {
   preferLit: boolean;
   /** Hide climbs in parks with opening hours. */
   openAllTimes: boolean;
+  /** Also look for stair repeats (changes the search, not just the ranking). */
+  includeStairs: boolean;
   priority: Priority;
 }
 
@@ -40,6 +42,7 @@ export const DEFAULT_FILTERS: Filters = {
   avoidTraffic: true,
   preferLit: false,
   openAllTimes: false,
+  includeStairs: false,
   priority: 'balanced',
 };
 
@@ -70,7 +73,7 @@ export function travelMinutesTo(distanceM: number, reach: Exclude<Reach, 'distan
 /** Number of filters differing from the defaults (shown on the "More filters" button). */
 export function activeFilterCount(f: Filters): number {
   const keys: (keyof Filters)[] = [
-    'minLength', 'maxLength', 'minGain', 'minAvgGrade', 'maxAvgGrade', 'maxGrade', 'surface', 'avoidTraffic', 'preferLit', 'openAllTimes',
+    'minLength', 'maxLength', 'minGain', 'minAvgGrade', 'maxAvgGrade', 'maxGrade', 'surface', 'avoidTraffic', 'preferLit', 'openAllTimes', 'includeStairs',
   ];
   return keys.filter((k) => f[k] !== DEFAULT_FILTERS[k]).length;
 }

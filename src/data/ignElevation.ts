@@ -139,12 +139,19 @@ export interface ElevationGrid {
   missingTiles: number;
 }
 
+/**
+ * Elevation grid for a bbox. `coarsen` uses that many levels coarser than the
+ * finest affordable one: detection only needs to *find* climbs, and the ones
+ * shown are re-measured from LiDAR HD afterwards (see fineElevation.ts), so
+ * one level coarser (≈9 m pixels) cuts downloads ~4× with no loss where it counts.
+ */
 export async function loadElevation(
   bbox: BBox,
   onProgress?: (done: number, total: number) => void,
   signal?: AbortSignal,
+  coarsen = 0,
 ): Promise<ElevationGrid> {
-  const level = chooseLevel(bbox);
+  const level = chooseLevel(bbox) + coarsen;
   const s0 = spans(level);
   const cLat = (bbox.south + bbox.north) / 2;
   const cLon = (bbox.west + bbox.east) / 2;

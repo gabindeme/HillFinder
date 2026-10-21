@@ -4,11 +4,13 @@ import { geocode, type Place } from '../data/nominatim';
 
 interface Props {
   onPlace: (place: Place) => void;
+  /** Recently searched places, newest first (their results work offline). */
+  recent: Place[];
 }
 
 type GeoState = 'idle' | 'explain' | 'locating';
 
-export function LocationBar({ onPlace }: Props) {
+export function LocationBar({ onPlace, recent }: Props) {
   const { t, i18n } = useTranslation();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Place[]>([]);
@@ -19,7 +21,7 @@ export function LocationBar({ onPlace }: Props) {
   const choose = (p: Place) => {
     setResults([]);
     setMessage(null);
-    setQuery(p.label.split(',').slice(0, 2).join(','));
+    setQuery(shortLabel(p));
     onPlace(p);
   };
 
@@ -114,6 +116,16 @@ export function LocationBar({ onPlace }: Props) {
           ))}
         </ul>
       )}
+      {recent.length > 0 && results.length === 0 && (
+        <div className="recent" aria-label={t('location.recent')}>
+          <span className="muted">{t('location.recent')}</span>
+          {recent.map((p) => (
+            <button key={`${p.lat},${p.lon}`} type="button" className="chip" onClick={() => choose(p)}>
+              {shortLabel(p)}
+            </button>
+          ))}
+        </div>
+      )}
       {message && (
         <p className="message" role="alert">
           {message}
@@ -122,3 +134,6 @@ export function LocationBar({ onPlace }: Props) {
     </div>
   );
 }
+
+/** "12 Rue X, Rennes, Ille-et-Vilaine, …" → "12 Rue X, Rennes". */
+const shortLabel = (p: Place) => p.label.split(',').slice(0, 2).join(',');

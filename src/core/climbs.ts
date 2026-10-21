@@ -35,7 +35,9 @@ export const DEFAULT_DETECT: DetectParams = {
   flatGrade: 0.01,
   trimGrade: 0.015,
   trimWindow: 20,
-  minLength: 50,
+  // Short enough for stair flights (25–50 m); hills are held to the user's
+  // (longer) minimum by the filters.
+  minLength: 20,
   minGain: 3,
 };
 

@@ -26,8 +26,18 @@ export interface Session {
   avgGrade: number;
   /** Estimated duration of one rep, seconds. */
   repSeconds: number;
-  /** "short" = hill sprints, "medium" = classic repeats, "long" = long reps on part of the climb. */
-  kind: 'short' | 'medium' | 'long';
+  /**
+   * 'short' = hill sprints, 'medium' = repeats on the whole climb,
+   * 'section' = repeats on the steepest part of a long climb,
+   * 'stairs' = stair repeats.
+   */
+  kind: 'short' | 'medium' | 'section' | 'stairs';
+  /** The rep's start and end, in metres from the bottom of the climb. */
+  from: number;
+  to: number;
+  /** Steps per rep (stairs only): OSM step_count, or estimated from height. */
+  steps?: number;
+  stepsEstimated?: boolean;
 }
 
 export function estimateRepSeconds(length: number, grade: number, flatSpeed = FLAT_SPEED): number {
@@ -35,30 +45,89 @@ export function estimateRepSeconds(length: number, grade: number, flatSpeed = FL
   return length / speed;
 }
 
-const MAX_REP = 600;
+/** Rep length range for long climbs, metres. */
+const SECTION_MIN = 200;
+const SECTION_MAX = 400;
+/** Classic hill repeats last about this long at hard effort, seconds. */
+const TARGET_REP = 75;
+/** Typical step height, to estimate step counts, metres. */
+const STEP_HEIGHT = 0.17;
+/** Sustainable vertical speed up stairs at hard effort, m/s. */
+const STAIRS_VERTICAL_SPEED = 0.5;
 
-export function suggestSession(climb: Pick<Climb, 'length' | 'gain' | 'profile'>): Session {
-  // Long climbs: repeat the first ~600 m rather than the whole thing, using
-  // the real profile for that section's gain.
+/**
+ * The steepest stretch of the given length: a sliding window over the
+ * profile maximising gain. Returns sample indices [from, to].
+ */
+export function steepestSection(dist: number[], ele: number[], length: number): [number, number] {
+  let best: [number, number] = [0, dist.length - 1];
+  let bestGain = -Infinity;
+  let j = 0;
+  for (let i = 0; i < dist.length; i++) {
+    while (j < dist.length - 1 && dist[j] - dist[i] < length) j++;
+    if (dist[j] - dist[i] < length) break;
+    const gain = ele[j] - ele[i];
+    if (gain > bestGain) {
+      bestGain = gain;
+      best = [i, j];
+    }
+  }
+  return best;
+}
+
+type SessionInput = Pick<Climb, 'length' | 'gain' | 'profile'> & Partial<Pick<Climb, 'stairs' | 'steps'>>;
+
+export function suggestSession(climb: SessionInput): Session {
   const { dist, ele } = climb.profile;
-  let end = dist.length - 1;
-  if (climb.length > MAX_REP) end = dist.findIndex((d) => d >= MAX_REP);
-  const repLength = dist[end];
-  const repGain = ele[end] - ele[0];
+  const last = dist.length - 1;
+
+  if ((climb.stairs ?? 0) >= 0.5) {
+    // Stair repeats: count in steps; time from vertical speed.
+    const steps = climb.steps ?? Math.round(climb.gain / STEP_HEIGHT);
+    const repSeconds = Math.max(climb.gain / STAIRS_VERTICAL_SPEED, climb.length / FLAT_SPEED);
+    return {
+      reps: clampReps(TARGET_WORK / 2 / repSeconds, 6, 15),
+      repLength: round5(climb.length),
+      repGain: Math.round(climb.gain),
+      avgGrade: round1((climb.gain / climb.length) * 100),
+      repSeconds,
+      kind: 'stairs',
+      from: 0,
+      to: dist[last],
+      steps,
+      stepsEstimated: climb.steps === undefined,
+    };
+  }
+
+  // Long climbs: repeat their steepest part, sized for a ~75 s effort.
+  let [a, b] = [0, last];
+  if (climb.length > SECTION_MAX) {
+    const grade = climb.gain / climb.length;
+    const target = (TARGET_REP * (FLAT_SPEED * minettiCost(0))) / minettiCost(grade);
+    const length = Math.min(SECTION_MAX, Math.max(SECTION_MIN, target));
+    [a, b] = steepestSection(dist, ele, length);
+  }
+  const repLength = dist[b] - dist[a];
+  const repGain = ele[b] - ele[a];
   const grade = repGain / repLength;
   const repSeconds = estimateRepSeconds(repLength, grade);
 
-  const kind = repSeconds < 45 ? 'short' : climb.length > repLength ? 'long' : 'medium';
+  const kind = b - a < last ? 'section' : repSeconds < 45 ? 'short' : 'medium';
   // Short sprints: fewer total seconds of work, but more reps.
   const target = kind === 'short' ? TARGET_WORK / 2 : TARGET_WORK;
-  const reps = Math.max(4, Math.min(kind === 'short' ? 12 : 10, Math.round(target / repSeconds)));
 
   return {
-    reps,
-    repLength: Math.round(repLength / 5) * 5,
+    reps: clampReps(target / repSeconds, 4, kind === 'short' ? 12 : 10),
+    repLength: round5(repLength),
     repGain: Math.round(repGain),
-    avgGrade: Math.round(grade * 1000) / 10,
+    avgGrade: round1(grade * 100),
     repSeconds,
     kind,
+    from: dist[a],
+    to: dist[b],
   };
 }
+
+const clampReps = (n: number, min: number, max: number) => Math.max(min, Math.min(max, Math.round(n)));
+const round5 = (m: number) => Math.round(m / 5) * 5;
+const round1 = (v: number) => Math.round(v * 10) / 10;

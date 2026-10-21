@@ -38,6 +38,12 @@ export interface WayAttrs {
   lit: number;
   /** Bridges and tunnels are not on the terrain surface (see profile.ts). */
   offTerrain: boolean;
+  /** highway=steps. */
+  stairs: boolean;
+  /** OSM step_count, when tagged. */
+  stepCount?: number;
+  /** OSM incline as an absolute percentage, when tagged numerically. */
+  incline?: number;
 }
 
 /**
@@ -77,4 +83,16 @@ export interface Climb {
   near?: { kind: 'in' | 'near'; name: string };
   /** Public access information (see access.ts). */
   access?: import('./access').Access;
+  /** Profile sample indices on bridges/tunnels (interpolated, not measured). */
+  bridged: number[];
+  /** Share of the climb on stairs, 0..1. */
+  stairs: number;
+  /** Total OSM step_count along the climb, when every stair way is tagged. */
+  steps?: number;
+  /** Average OSM incline tag (%) where tagged, if it covers enough of the climb. */
+  osmIncline?: number;
+  /** Elevation source of the profile once re-measured (see refine.ts). */
+  refined?: 'lidar' | 'rge';
+  /** Gain measured on the coarse detection grid, kept to judge reliability. */
+  coarseGain?: number;
 }

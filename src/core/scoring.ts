@@ -64,10 +64,22 @@ function percentile(values: number[], q: number): number {
 
 const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
 
+/** Mostly stairs (only present when the "include stairs" option is on). */
+export const isStairs = (c: Climb) => (c.stairs ?? 0) >= 0.5;
+
+/**
+ * Stairs climb 4–10 m in a flat city; the hill "minimum gain" would hide them
+ * all. They need this much height (~25 steps), or the user's minimum if lower.
+ */
+const STAIRS_MIN_GAIN = 4;
+/** With stairs on, the best few are always listed (hills would outscore them). */
+const STAIRS_SLOTS = 5;
+
 export function scoreClimbs(climbs: Climb[], filters: Filters): RankedClimb[] {
   const weights = weightsFor(filters);
   // Floors keep the scale meaningful when every candidate is tiny.
-  const refGrade = Math.max(3, percentile(climbs.map((c) => c.avgGrade), 0.9));
+  // Stairs (30–60%) would stretch the steepness scale and flatten every hill's score.
+  const refGrade = Math.max(3, percentile(climbs.filter((c) => !isStairs(c)).map((c) => c.avgGrade), 0.9));
   const refGain = Math.max(10, percentile(climbs.map((c) => c.gain), 0.9));
   const refLength = Math.max(200, percentile(climbs.map((c) => c.length), 0.9));
   const radius = effectiveRadiusKm(filters) * 1000;
@@ -93,10 +105,12 @@ export function scoreClimbs(climbs: Climb[], filters: Filters): RankedClimb[] {
 /** Hard filters, as a predicate. */
 export function passes(c: Climb, f: Filters): boolean {
   if (c.distance > effectiveRadiusKm(f) * 1000) return false;
-  if (c.length < f.minLength || c.length > f.maxLength) return false;
-  if (c.gain < f.minGain) return false;
-  if (c.avgGrade < f.minAvgGrade || c.avgGrade > f.maxAvgGrade) return false;
-  if (f.maxGrade !== null && c.maxGrade > f.maxGrade) return false;
+  // Stair flights are short (30–60 m); for them the height climbed is what counts.
+  if ((!isStairs(c) && c.length < f.minLength) || c.length > f.maxLength) return false;
+  if (c.gain < (isStairs(c) ? Math.min(f.minGain, STAIRS_MIN_GAIN) : f.minGain)) return false;
+  // Gradient limits are about runnable slopes; stairs are steep by nature.
+  if (!isStairs(c) && (c.avgGrade < f.minAvgGrade || c.avgGrade > f.maxAvgGrade)) return false;
+  if (!isStairs(c) && f.maxGrade !== null && c.maxGrade > f.maxGrade) return false;
   if (f.surface === 'trail' && c.trail < 0.5) return false;
   if (f.surface === 'road' && c.trail > 0.5) return false;
   if (f.avoidTraffic && c.safety < BUSY_ROAD_SAFETY) return false;
@@ -159,7 +173,10 @@ export function rankClimbs(all: Climb[], filters: Filters): RankResult {
     const kept = candidates.filter((c) => passes(c, levels[level]));
     // Score against the original filters' weights; only the gates are relaxed.
     const scored = scoreClimbs(kept, filters).sort((a, b) => b.score - a.score);
-    const unique = dedupe(scored, MAX_RESULTS);
+    // Hills and stairs are listed separately, then merged by score.
+    const hills = dedupe(scored.filter((c) => !isStairs(c)), MAX_RESULTS);
+    const stairs = dedupe(scored.filter(isStairs), STAIRS_SLOTS);
+    const unique = [...hills, ...stairs].sort((a, b) => b.score - a.score);
     unique.forEach((c, i) => (c.rank = i + 1));
     best = { climbs: unique, relaxLevel: level, hiddenRestricted };
     if (unique.length >= MIN_RESULTS) break;

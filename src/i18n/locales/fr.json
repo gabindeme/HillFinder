@@ -22,7 +22,8 @@
     "noResults": "Aucun lieu trouvé pour « {{query}} ».",
     "error": "La recherche d'adresse a échoué. Réessayez.",
     "tryExample": "Essayer avec {{place}}",
-    "myPosition": "Ma position"
+    "myPosition": "Ma position",
+    "recent": "Récents :"
   },
   "filters": {
     "radius": "Rayon",
@@ -74,7 +75,9 @@
     },
     "openAllTimes": "Accessible à toute heure",
     "openAllTimesHint": "Masquer les parcs avec horaires d'ouverture",
-    "noHours": "Nécessite les données détaillées (plus bas)"
+    "noHours": "Nécessite les données détaillées (plus bas)",
+    "includeStairs": "Inclure les escaliers",
+    "includeStairsHint": "Fractionné en escaliers : souvent le plus raide en ville plate"
   },
   "status": {
     "slow": "La première recherche détaillée dans une zone peut prendre une minute ; elle est ensuite mise en cache.",
@@ -92,7 +95,8 @@
     "nearby": "Recherche des côtes autour de vous…",
     "download": "Recherche dans toute la zone de {{km}} km…",
     "analysis": "Sélection des meilleures côtes…",
-    "showingNearby": "Côtes à moins de {{km}} km affichées en attendant la recherche complète."
+    "showingNearby": "Côtes à moins de {{km}} km affichées en attendant la recherche complète.",
+    "measuring": "Mesure fine des profils au LiDAR HD (50 cm)…"
   },
   "climb": {
     "unnamed": "{{kind}} sans nom",
@@ -128,7 +132,8 @@
     "profile": "Profil d'altitude",
     "awayFoot": "≈ {{min}} min en courant",
     "awayBike": "≈ {{min}} min à vélo",
-    "lit": "{{pct}} % éclairé"
+    "lit": "{{pct}} % éclairé",
+    "stairsBadge": "Escaliers"
   },
   "factors": {
     "steepness": "Pente",
@@ -143,9 +148,12 @@
     "title": "Séance suggérée",
     "short": "{{reps}} × {{length}} m en sprints de côte à {{grade}} % de moyenne",
     "medium": "{{reps}} × {{length}} m à {{grade}} % de moyenne",
-    "long": "{{reps}} × {{length}} m à {{grade}} % de moyenne (les {{length}} premiers mètres de la côte)",
     "detail": "≈ {{time}} par répétition à allure soutenue, retour en trottinant pour récupérer. +{{gain}} m par répétition, +{{total}} m au total.",
-    "warmup": "Échauffez-vous d'abord 15 min en footing."
+    "warmup": "Échauffez-vous d'abord 15 min en footing.",
+    "section": "{{reps}} × {{length}} m à {{grade}} % de moyenne (partie la plus raide)",
+    "sectionWhere": "Répétition de {{from}} m à {{to}} m depuis le bas (en bleu sur le profil et la carte).",
+    "stairs": "{{reps}} × {{steps}} marches (+{{height}} m chacune)",
+    "stepsEstimated": "Nombre de marches estimé d'après la hauteur (≈ 17 cm par marche)."
   },
   "footer": {
     "data": {
@@ -175,5 +183,21 @@
     "saved": "Enregistrée",
     "note": "Enregistrés dans ce navigateur uniquement. Distances depuis votre lieu de recherche actuel.",
     "empty": "Aucun favori pour l'instant. Touchez ☆ sur une côte pour la garder ici, même hors ligne."
+  },
+  "accuracy": {
+    "lidar": "Profil mesuré avec le LiDAR HD de l'IGN (50 cm).",
+    "rge": "Profil mesuré avec le RGE ALTI de l'IGN (1 à 5 m) ; le LiDAR HD n'est pas encore disponible ici.",
+    "coarse": "Profil issu de la grille de détection ; il est remesuré quand la côte apparaît dans la liste.",
+    "check": "À vérifier sur place : ce profil peut être faussé.",
+    "badge": "À vérifier",
+    "reasons": {
+      "mismatch": "Les mesures fine et grossière divergent, souvent un mur, un talus ou une tranchée juste à côté du chemin.",
+      "roadTooSteep": "C'est inhabituellement raide pour une route.",
+      "osmIncline": "OpenStreetMap indique une pente d'environ {{incline}} %."
+    }
+  },
+  "chart": {
+    "rep": "Répét.",
+    "hint": "Touchez le profil pour le détail"
   }
 }

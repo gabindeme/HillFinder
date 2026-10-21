@@ -7,6 +7,7 @@ import { buildStrokes, splitIntoEdges } from './graph';
 import { labelUnnamed, stitchRings } from './naming';
 import { findCandidates } from './pipeline';
 import { reverseProfile, STEP, strokeProfiles } from './profile';
+import { refineClimb, reliability } from './refine';
 import { passes, rankClimbs } from './scoring';
 import { estimateRepSeconds, suggestSession } from './session';
 import { classifyWay } from './tags';
@@ -145,9 +146,31 @@ describe('session', () => {
     };
     expect(suggestSession(climbOf(80, 0.1)).kind).toBe('short');
     const long = suggestSession(climbOf(1500, 0.05));
-    expect(long.kind).toBe('long');
-    expect(long.repLength).toBe(600);
+    expect(long.kind).toBe('section');
+    expect(long.repLength).toBeGreaterThanOrEqual(200);
+    expect(long.repLength).toBeLessThanOrEqual(400);
     expect(long.avgGrade).toBeCloseTo(5, 1);
+  });
+
+  it('puts the rep on the steepest part of a long climb', () => {
+    // 600 m at 2%, then 300 m at 8%, then 300 m at 2%.
+    const dist = Array.from({ length: 241 }, (_, i) => i * 5);
+    const ele = dist.map((d) => (d <= 600 ? d * 0.02 : d <= 900 ? 12 + (d - 600) * 0.08 : 36 + (d - 900) * 0.02));
+    const s = suggestSession({ length: 1200, gain: ele[240], profile: { dist, ele } });
+    expect(s.kind).toBe('section');
+    expect(s.from).toBeGreaterThanOrEqual(600);
+    expect(s.to).toBeLessThanOrEqual(900);
+    expect(s.avgGrade).toBeCloseTo(8, 0);
+  });
+
+  it('counts stair repeats in steps', () => {
+    const dist = Array.from({ length: 9 }, (_, i) => i * 5);
+    const ele = dist.map((d) => d * 0.4);
+    const tagged = suggestSession({ length: 40, gain: 16, profile: { dist, ele }, stairs: 1, steps: 90 });
+    expect(tagged).toMatchObject({ kind: 'stairs', steps: 90, stepsEstimated: false });
+    const estimated = suggestSession({ length: 40, gain: 16, profile: { dist, ele }, stairs: 1 });
+    expect(estimated.steps).toBe(94); // 16 m / 0.17 m
+    expect(estimated.stepsEstimated).toBe(true);
   });
 });
 
@@ -256,5 +279,65 @@ describe('access', () => {
     expect(restrictionOf({ access: 'private', landuse: 'grass' })).toBe('private');
     expect(restrictionOf({ highway: 'service', access: 'private' })).toBeNull();
     expect(isClosedBarrier({ barrier: 'gate', access: 'private', foot: 'yes' })).toBe(false);
+  });
+});
+
+describe('refine', () => {
+  const coarse = (eles: number[]): Climb => {
+    const dist = eles.map((_, i) => i * STEP);
+    return {
+      id: 'c', coords: dist.map((d) => pt(d, 0)), profile: { dist, ele: eles },
+      length: dist[dist.length - 1], gain: eles[eles.length - 1] - eles[0], avgGrade: 0, maxGrade: 0,
+      startEle: eles[0], distance: 0, trail: 1, safety: 1, lit: 0.5, names: [], highway: 'footway',
+      bridged: [], stairs: 0,
+    };
+  };
+
+  it('recomputes stats from the fine profile and keeps the coarse gain for comparison', () => {
+    const c = coarse(ramp(30, 0.05, 200));
+    const fine = ramp(30, 0.07, 200);
+    const r = refineClimb(c, fine, 'lidar')!;
+    expect(r.refined).toBe('lidar');
+    expect(r.avgGrade).toBeCloseTo(7, 0);
+    expect(r.coarseGain).toBeCloseTo(c.gain);
+  });
+
+  it('interpolates over bridges and missing values', () => {
+    const c = { ...coarse(ramp(30, 0.05, 200)), bridged: [10, 11, 12] };
+    const fine = ramp(30, 0.05, 200);
+    fine[10] = fine[11] = fine[12] = 20; // the river under the bridge
+    fine[25] = NaN;
+    const r = refineClimb(c, fine, 'lidar')!;
+    expect(Math.min(...r.profile.ele.slice(5, 20))).toBeGreaterThan(30);
+    expect(r.gain).toBeCloseTo(c.gain, 0);
+  });
+
+  it('flags profiles that look wrong', () => {
+    const c = coarse(ramp(30, 0.05, 200));
+    // Fine data shows twice the gain: the coarse grid blurred a wall or bank.
+    const r = refineClimb(c, ramp(30, 0.1, 200), 'lidar')!;
+    expect(reliability(r)).toMatchObject({ level: 'check', reasons: ['mismatch'] });
+    expect(reliability(refineClimb(c, ramp(30, 0.05, 200), 'lidar')!).level).toBe('verified');
+    expect(reliability({ ...c, highway: 'residential', maxGrade: 24 }).reasons).toContain('roadTooSteep');
+    expect(reliability({ ...c, avgGrade: 5, osmIncline: 12 }).reasons).toContain('osmIncline');
+  });
+});
+
+describe('stairs in ranking', () => {
+  it('ignores gradient caps for stair climbs', () => {
+    const stairs = { distance: 100, length: 40, gain: 16, avgGrade: 40, maxGrade: 45, trail: 0, safety: 1, stairs: 1 } as Climb;
+    expect(passes(stairs, DEFAULT_FILTERS)).toBe(true);
+    expect(passes({ ...stairs, stairs: 0 }, DEFAULT_FILTERS)).toBe(false);
+  });
+});
+
+describe('stairs slots', () => {
+  it('lists the best stair climbs even when hills outscore them', () => {
+    const hill = (i: number) =>
+      ({ id: `h${i}`, coords: [pt(i * 1000, 0), pt(i * 1000 + 300, 0)], distance: 500, length: 300, gain: 20, avgGrade: 6.7, maxGrade: 9, trail: 1, safety: 1, lit: 0.5, stairs: 0 }) as unknown as Climb;
+    const stair = { id: 's', coords: [pt(0, 3000), pt(30, 3000)], distance: 4000, length: 30, gain: 6, avgGrade: 20, maxGrade: 25, trail: 0, safety: 1, lit: 0.5, stairs: 1 } as unknown as Climb;
+    const { climbs } = rankClimbs([...Array.from({ length: 25 }, (_, i) => hill(i)), stair], DEFAULT_FILTERS);
+    expect(climbs.some((c) => c.id === 's')).toBe(true);
+    expect(climbs.filter((c) => c.stairs === 0)).toHaveLength(20);
   });
 });

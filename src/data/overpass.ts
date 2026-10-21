@@ -30,7 +30,8 @@ export class OverpassBusyError extends Error {
 const MAX_AGE = 7 * DAY;
 
 function query(center: LatLon, radius: number): string {
-  const hw = RUNNABLE_HIGHWAYS.join('|');
+  // Steps are always fetched; the "include stairs" option filters them later.
+  const hw = [...RUNNABLE_HIGHWAYS, 'steps'].join('|');
   const around = `around:${Math.round(radius)},${center.lat.toFixed(5)},${center.lon.toFixed(5)}`;
   // Runnable ways; named parks and woods (labels, opening hours); restricted
   // areas and closed gates (see core/access.ts).
@@ -92,7 +93,7 @@ function toWays(elements: OverpassElement[]): OsmWay[] {
 export async function fetchWays(center: LatLon, radius: number, signal?: AbortSignal): Promise<OsmWay[]> {
   // Round the centre and radius so small moves of the origin reuse the same download.
   const r = Math.ceil(radius / 500) * 500;
-  const key = `osm4:${center.lat.toFixed(3)}:${center.lon.toFixed(3)}:${r}`;
+  const key = `osm5:${center.lat.toFixed(3)}:${center.lon.toFixed(3)}:${r}`;
   const cached = await cacheGet<OsmWay[]>(key, MAX_AGE);
   if (cached) return cached;
 

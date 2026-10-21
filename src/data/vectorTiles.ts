@@ -100,7 +100,7 @@ export function clipLine(line: Pt[], minX: number, minY: number, size: number): 
     .filter((piece) => piece.length >= 2);
 }
 
-const SKIP_SUBCLASS = new Set(['steps', 'platform', 'corridor', 'elevator', 'escalator']);
+const SKIP_SUBCLASS = new Set(['platform', 'corridor', 'elevator', 'escalator']);
 const SKIP_SERVICE = new Set(['driveway', 'parking_aisle', 'drive-through']);
 
 /** OpenMapTiles transportation attributes → OSM-like tags (see tags.ts). */

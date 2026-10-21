@@ -27,10 +27,12 @@ const PATH_MARGIN = 500;
  * Elevation is the slowest download (≈1 MB, ≈1 s per tile), so keep this tight.
  */
 const ELEVATION_MARGIN = 1000;
+/** Detection grid: one level coarser than the finest affordable (see loadElevation). */
+const COARSEN = 1;
 /** Radius of the quick first pass, km. */
 const NEARBY_KM = 1.5;
 /** Bump when detection inputs change, to invalidate cached results. */
-const RESULTS_VERSION = 2;
+const RESULTS_VERSION = 4;
 const RESULTS_MAX_AGE = 7 * DAY;
 
 /**
@@ -99,13 +101,14 @@ async function gather(
         report();
       },
       signal,
+      COARSEN,
     ),
   ]);
   return { ways, grid };
 }
 
 self.onmessage = async (e: MessageEvent<SearchRequest>) => {
-  const { id, origin, radiusKm, source } = e.data;
+  const { id, origin, radiusKm, source, includeStairs } = e.data;
   current?.abort();
   const controller = new AbortController();
   current = controller;
@@ -114,7 +117,8 @@ self.onmessage = async (e: MessageEvent<SearchRequest>) => {
     if (!signal.aborted) post({ type: 'progress', id, stage, done, total });
   };
 
-  const key = `res:${RESULTS_VERSION}:${source}:${origin.lat.toFixed(4)}:${origin.lon.toFixed(4)}:${radiusKm}`;
+  const key = `res:${RESULTS_VERSION}:${source}:${includeStairs ? 'stairs' : 'nostairs'}:${origin.lat.toFixed(4)}:${origin.lon.toFixed(4)}:${radiusKm}`;
+  const options = { includeStairs };
   try {
     const cached = await cacheGet<CachedResult>(key, RESULTS_MAX_AGE);
     if (signal.aborted) return;
@@ -132,7 +136,7 @@ self.onmessage = async (e: MessageEvent<SearchRequest>) => {
       : gather(origin, NEARBY_KM * 1000, source, signal, progress('nearby')).then((near) => {
           nearbyDone = true;
           if (signal.aborted || fullDone) return;
-          const candidates = findCandidates(near.ways, near.grid.sampler, origin, NEARBY_KM * 1000);
+          const candidates = findCandidates(near.ways, near.grid.sampler, origin, NEARBY_KM * 1000, undefined, options);
           post({ type: 'partial', id, candidates, resolution: near.grid.resolution, nearbyKm: NEARBY_KM });
         });
     const fullProgress = progress('download');
@@ -144,7 +148,7 @@ self.onmessage = async (e: MessageEvent<SearchRequest>) => {
     const { ways, grid } = await full;
     fullDone = true;
     if (signal.aborted) return;
-    const candidates = findCandidates(ways, grid.sampler, origin, radius, progress('analysis'));
+    const candidates = findCandidates(ways, grid.sampler, origin, radius, progress('analysis'), options);
     post({ type: 'result', id, candidates, resolution: grid.resolution, missingTiles: grid.missingTiles });
     // Only cache complete results.
     if (!grid.missingTiles) await cacheSet<CachedResult>(key, { climbs: candidates.map(pack), resolution: grid.resolution });

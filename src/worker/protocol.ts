@@ -12,6 +12,7 @@ export interface SearchRequest {
   origin: LatLon;
   radiusKm: number;
   source: DataSource;
+  includeStairs: boolean;
 }
 
 /** 'nearby' = quick first pass around the origin; then 'download' and 'analysis' for the full area. */

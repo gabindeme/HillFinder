@@ -52,6 +52,7 @@ export function searchClimbs(
   origin: LatLon,
   radiusKm: number,
   source: DataSource,
+  includeStairs: boolean,
   { onProgress, onPartial }: Handlers,
 ): Promise<SearchOutcome> {
   const w = getWorker();
@@ -71,6 +72,6 @@ export function searchClimbs(
     };
     w.addEventListener('message', onMessage);
     detachPrevious = () => w.removeEventListener('message', onMessage);
-    w.postMessage({ id, origin, radiusKm, source });
+    w.postMessage({ id, origin, radiusKm, source, includeStairs });
   });
 }

@@ -27,11 +27,13 @@ describe('omtTags', () => {
     expect(omtTags({ class: 'minor' })?.highway).toBe('residential');
     expect(omtTags({ class: 'path', subclass: 'footway', surface: 'unpaved' })).toMatchObject({ highway: 'footway', surface: 'unpaved' });
     expect(omtTags({ class: 'path', subclass: 'cycleway', brunnel: 'bridge' })?.bridge).toBe('yes');
+    // Kept so the "include stairs" option can use them.
+    expect(omtTags({ class: 'path', subclass: 'steps' })?.highway).toBe('steps');
   });
 
   it('skips unrunnable features', () => {
     expect(omtTags({ class: 'motorway' })).toBeNull();
-    expect(omtTags({ class: 'path', subclass: 'steps' })).toBeNull();
+    expect(omtTags({ class: 'path', subclass: 'elevator' })).toBeNull();
     expect(omtTags({ class: 'service', service: 'parking_aisle' })).toBeNull();
     expect(omtTags({ class: 'rail' })).toBeNull();
   });

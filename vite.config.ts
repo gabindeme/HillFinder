@@ -7,6 +7,8 @@ export default defineConfig({
   // GitHub Pages serves the site from /HillFinder/; override with BASE_PATH
   // when hosting at a domain root (e.g. BASE_PATH=/ pnpm build).
   base: process.env.BASE_PATH ?? '/HillFinder/',
+  // The map chunk is MapLibre itself (~1 MB); it's lazy-loaded and precached.
+  build: { chunkSizeWarningLimit: 1200 },
   plugins: [
     react(),
     VitePWA({

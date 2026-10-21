@@ -19,9 +19,11 @@ export function climbFromSpan(
   const coords: LatLon[] = [];
   const dist: number[] = [];
   const ele: number[] = [];
-  let trail = 0, safety = 0, lit = 0;
+  let trail = 0, safety = 0, lit = 0, stairSamples = 0, inclineSum = 0, inclineSamples = 0;
   const names = new Set<string>();
   const highways = new Map<string, number>();
+  const bridged: number[] = [];
+  const stairWays = new Map<number, number | undefined>(); // way id → step_count
   for (let i = s; i <= e; i++) {
     coords.push({ lat: p.lat[i], lon: p.lon[i] });
     dist.push(p.dist[i] - p.dist[s]);
@@ -32,7 +34,17 @@ export function climbFromSpan(
     lit += a.lit;
     if (a.name) names.add(a.name);
     highways.set(a.highway, (highways.get(a.highway) ?? 0) + 1);
+    if (a.offTerrain) bridged.push(i - s);
+    if (a.stairs) {
+      stairSamples++;
+      stairWays.set(a.wayId, a.stepCount);
+    }
+    if (a.incline !== undefined) {
+      inclineSum += a.incline;
+      inclineSamples++;
+    }
   }
+  const stepCounts = [...stairWays.values()];
   const n = e - s + 1;
   const length = p.dist[e] - p.dist[s];
   const gain = p.ele[e] - p.ele[s];
@@ -52,11 +64,22 @@ export function climbFromSpan(
     lit: lit / n,
     names: [...names],
     highway: [...highways].sort((x, y) => y[1] - x[1])[0][0],
+    bridged,
+    stairs: stairSamples / n,
+    steps: stepCounts.length && stepCounts.every((c) => c !== undefined)
+      ? stepCounts.reduce((sum, c) => sum + c!, 0)
+      : undefined,
+    // Only meaningful if the tag covers at least half the climb.
+    osmIncline: inclineSamples >= n / 2 ? inclineSum / inclineSamples : undefined,
   };
 }
 
 export interface DetectProgress {
   (done: number, total: number): void;
+}
+
+export interface DetectOptions {
+  includeStairs?: boolean;
 }
 
 export function findCandidates(
@@ -65,8 +88,9 @@ export function findCandidates(
   origin: LatLon,
   radius: number,
   onProgress?: DetectProgress,
+  { includeStairs = false }: DetectOptions = {},
 ): Climb[] {
-  const ways = rawWays.filter((w) => w.geometry?.length >= 2 && isRunnable(w.tags ?? {}));
+  const ways = rawWays.filter((w) => w.geometry?.length >= 2 && isRunnable(w.tags ?? {}, includeStairs));
   const attrs = ways.map((w) => classifyWay(w.id, w.tags));
   const edges = splitIntoEdges(ways);
   const strokes = buildStrokes(edges);

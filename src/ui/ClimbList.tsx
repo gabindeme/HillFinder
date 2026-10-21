@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import type { Reach } from '../core/filters';
+import { reliability } from '../core/refine';
 import type { RankedClimb } from '../core/scoring';
 import { climbName, fmtAway, fmtGrade, fmtM, gradeColor, surfaceLabel } from './format';
 
@@ -32,6 +33,8 @@ export function ClimbList({ climbs, reach, onSelect, isFavorite, onToggleFavorit
               <span className="climb-meta">
                 {fmtAway(c, reach, t)} · {surfaceLabel(c, t)}
                 {c.access?.hours && <span className="tag">🕗 {t('access.hoursBadge')}</span>}
+                {(c.stairs ?? 0) >= 0.5 && <span className="tag stairs">🪜 {t('climb.stairsBadge')}</span>}
+                {reliability(c).level === 'check' && <span className="tag warn">⚠ {t('accuracy.badge')}</span>}
               </span>
             </span>
             {showScore && (

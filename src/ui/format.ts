@@ -35,12 +35,16 @@ export function surfaceLabel(c: Climb, t: TFunction): string {
  * Colour for a gradient, used on the map and the profile chart.
  * Bands chosen for running: <3% barely felt, 3–6% steady, 6–9% hard, 9–12% very hard, >12% brutal.
  */
+export const GRADE_BANDS = [
+  { below: 3, color: '#8bc34a', label: '<3%' },
+  { below: 6, color: '#fbc02d', label: '3–6%' },
+  { below: 9, color: '#fb8c00', label: '6–9%' },
+  { below: 12, color: '#e53935', label: '9–12%' },
+  { below: Infinity, color: '#8e24aa', label: '>12%' },
+] as const;
+
 export function gradeColor(grade: number): string {
-  if (grade < 3) return '#8bc34a';
-  if (grade < 6) return '#fbc02d';
-  if (grade < 9) return '#fb8c00';
-  if (grade < 12) return '#e53935';
-  return '#8e24aa';
+  return GRADE_BANDS.find((b) => grade < b.below)!.color;
 }
 
 /** "1.2 km away", or a travel-time estimate when searching by time. */

@@ -22,7 +22,11 @@ It was built for Rennes, France, where the best hill may only have 20–30 m of 
 
   Filters are saved in the browser. If too few climbs match, they loosen automatically, but the radius never does.
 - **Public access:** climbs inside military land, prisons, school grounds or private areas, or through locked gates, are never shown. Climbs in parks with opening hours are flagged.
-- **Climb details:** elevation profile coloured by gradient, stats, a suggested session and links to check the spot on OpenStreetMap.
+- **Precise profiles:** climbs are found on a light ~9 m grid, then the ones you see are re-measured with IGN **LiDAR HD (50 cm)**. Doubtful profiles are flagged: fine and coarse measurements disagree (a wall or embankment beside the path), a road is implausibly steep, or the slope disagrees with OpenStreetMap's `incline` tag.
+- **Climb details:** an elevation profile coloured by gradient that you can touch to read distance, elevation and local gradient; stats; links to check the spot on OpenStreetMap.
+- **Sessions that fit the hill:** long climbs get repeats on their **steepest 200–400 m** (sized for about 75 s of effort), shaded on the profile and map.
+- **Stair repeats** (optional): often the steepest thing in a flat city. Sessions are counted in steps, using OSM `step_count` when tagged.
+- **Recent places:** one tap to search again, and their results open offline.
 - **Favourites:** star a climb to keep it in your browser. Saved hills stay viewable without a connection.
 - **Two data sources:**
   - **Fast** (vector tiles, a few seconds per search)
@@ -53,6 +57,10 @@ pnpm preview      # serve the production build
 # Run a full search from the command line and print the ranked climbs:
 pnpm try                                  # central Rennes, 5 km, Overpass data
 pnpm try 48.1113 -1.68 5 --fast           # lat, lon, radius km, vector tiles
+
+# Check that coarse detection + LiDAR re-measurement finds the same top hills
+# as fine detection, and compare download sizes:
+pnpm tsx scripts/compare-precision.ts 48.1113 -1.68 5
 ```
 
 No API keys are needed. The app is fully static.
@@ -76,11 +84,12 @@ OSM paths ──► routes ──► elevation profiles ──► climbs ──�
 
 1. **Paths** (`src/data/vectorTiles.ts`, `src/data/overpass.ts`): runnable OSM ways (footways, tracks, residential streets and so on). Motorways, steps and private paths are excluded.
 2. **Routes** (`src/core/graph.ts`): OSM splits roads arbitrarily, so ways are cut at junctions and re-joined into continuous lines by pairing the straightest continuation at each junction.
-3. **Profiles** (`src/core/profile.ts`): each route is resampled every 5 m and its elevation read from IGN's grid. A median filter and a 25 m moving average remove noise. Bridges and tunnels are interpolated, because the terrain model shows the valley under a bridge, not the deck.
+3. **Profiles** (`src/core/profile.ts`): each route is resampled every 5 m and its elevation read from IGN's grid (one level coarser than the finest affordable: ~9 m for a 5 km search). A median filter and a 25 m moving average remove noise. Bridges and tunnels are interpolated, because the terrain model shows the valley under a bridge, not the deck.
 4. **Climbs** (`src/core/climbs.ts`): a scan that tolerates dips of up to 2 m finds stretches that go up overall. Any 100 m stretch under 1% splits a climb in two. Gentle ends are trimmed, and the "max gradient" is the steepest 50 m section, not a single noisy sample.
 5. **Labels & access** (`src/core/naming.ts`, `src/core/access.ts`): unnamed paths get a label such as "Footpath in Parc du Thabor" or "Footpath near Rue …". Climbs inside restricted areas or through closed gates are flagged.
-6. **Ranking** (`src/core/scoring.ts`): each factor (steepness, gain, length, proximity, trail, safety, lighting) is normalised to the 90th percentile of the candidates found nearby, then weighted by the chosen priority. Near-duplicates are dropped, such as sidewalks beside a road or parallel paths up the same slope.
-7. **Session** (`src/core/session.ts`): rep time comes from Minetti et al. (2002), a model of the energy cost of running uphill. Reps are sized for about 15 minutes of uphill effort; long climbs use their first 600 m.
+6. **Re-measuring** (`src/core/refine.ts`, `src/data/fineElevation.ts`): the climbs on screen get point elevations from LiDAR HD (RGE ALTI where LiDAR isn't available yet). Ends are re-trimmed and stats recomputed, and the list re-ranks. In Rennes this finds the same top 20 as a 4 m detection grid, with about 3× less data.
+7. **Ranking** (`src/core/scoring.ts`): each factor (steepness, gain, length, proximity, trail, safety, lighting) is normalised to the 90th percentile of the candidates found nearby, then weighted by the chosen priority. Near-duplicates are dropped, such as sidewalks beside a road or parallel paths up the same slope.
+8. **Session** (`src/core/session.ts`): rep time comes from Minetti et al. (2002), a model of the energy cost of running uphill. Long climbs use their steepest 200–400 m (about 75 s of effort), reps add up to about 15 minutes of work, and stairs are counted in steps.
 
 Steps 1–5 run once per search in a Web Worker (`src/worker/`). Ranking runs on the main thread, so changing filters is instant.
 
@@ -88,15 +97,16 @@ Steps 1–5 run once per search in a Web Worker (`src/worker/`). Ranking runs on
 
 | Data | Source | Notes |
 |---|---|---|
-| Elevation | [IGN RGE ALTI](https://geoservices.ign.fr/rgealti) via the Géoplateforme WMS-R | Lidar-based terrain model, fetched as about 4 m grids. **France only.** |
+| Elevation (detection) | [IGN RGE ALTI](https://geoservices.ign.fr/rgealti) via the Géoplateforme WMS-R | Fetched as ~9 m grids (a 5 km search downloads about 15 MB of elevation). **France only.** |
+| Elevation (profiles) | [IGN LiDAR HD](https://geoservices.ign.fr/lidarhd) via the Géoplateforme altimetry API | 50 cm terrain model, point queries for the climbs on screen; RGE ALTI as fallback. |
 | Paths (fast) | [OpenFreeMap](https://openfreemap.org) vector tiles (OpenMapTiles schema) | Lighting, opening hours, gates and most park names aren't included. |
 | Paths (detailed) | [Overpass API](https://overpass-api.de) | Full OSM tags. Public servers are sometimes overloaded; the app retries several of them. |
 | Geocoding | [Nominatim](https://nominatim.org) | Searches only on submit, at most one request per second, with results cached, per the [usage policy](https://operations.osmfoundation.org/policies/nominatim/). |
 | Base map | OpenStreetMap tiles in [MapLibre GL](https://maplibre.org) | |
 
-Map data © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright) · © OpenMapTiles · Elevation © IGN.
+Map data © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright) · © OpenMapTiles · Elevation © IGN (RGE ALTI, LiDAR HD).
 
-Downloads are cached in IndexedDB for one to two weeks (paths) or three months (elevation), and finished results for a week, to avoid hammering the public services.
+Downloads are cached in IndexedDB for one to two weeks (paths) or three months (elevation grids and LiDAR profiles), and finished results for a week, to avoid hammering the public services.
 
 ## Project structure
 

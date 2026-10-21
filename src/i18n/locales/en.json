@@ -22,7 +22,8 @@
     "noResults": "No place found for “{{query}}”.",
     "error": "Address search failed. Please try again.",
     "tryExample": "Try it with {{place}}",
-    "myPosition": "My location"
+    "myPosition": "My location",
+    "recent": "Recent:"
   },
   "filters": {
     "radius": "Radius",
@@ -74,7 +75,9 @@
     },
     "openAllTimes": "Open at all times",
     "openAllTimesHint": "Hide parks with opening hours",
-    "noHours": "Needs the detailed data source (below)"
+    "noHours": "Needs the detailed data source (below)",
+    "includeStairs": "Include stairs",
+    "includeStairsHint": "Stair repeats: often the steepest thing in a flat city"
   },
   "status": {
     "slow": "The first detailed search in an area can take a minute; it's cached afterwards.",
@@ -92,7 +95,8 @@
     "showingNearby": "Showing hills within {{km}} km while the wider search finishes.",
     "offline": "You're offline. Your favourites still work; searching will resume when you're back online.",
     "found_one": "{{count}} climb within {{radius}} km",
-    "found_other": "{{count}} climbs within {{radius}} km"
+    "found_other": "{{count}} climbs within {{radius}} km",
+    "measuring": "Re-measuring profiles with LiDAR HD (50 cm)…"
   },
   "climb": {
     "unnamed": "Unnamed {{kind}}",
@@ -128,7 +132,8 @@
     "profile": "Elevation profile",
     "awayFoot": "≈ {{min}} min run away",
     "awayBike": "≈ {{min}} min by bike",
-    "lit": "{{pct}}% lit"
+    "lit": "{{pct}}% lit",
+    "stairsBadge": "Stairs"
   },
   "factors": {
     "steepness": "Steepness",
@@ -143,9 +148,12 @@
     "title": "Suggested session",
     "short": "{{reps}} × {{length}} m hill sprints at {{grade}}% avg",
     "medium": "{{reps}} × {{length}} m at {{grade}}% avg",
-    "long": "{{reps}} × {{length}} m at {{grade}}% avg (first {{length}} m of the climb)",
     "detail": "≈ {{time}} per rep at hard effort, jog back down to recover. +{{gain}} m per rep, +{{total}} m total.",
-    "warmup": "Warm up 15 min easy first."
+    "warmup": "Warm up 15 min easy first.",
+    "section": "{{reps}} × {{length}} m at {{grade}}% avg (steepest part)",
+    "sectionWhere": "Rep from {{from}} m to {{to}} m up the climb (shaded on the profile and map).",
+    "stairs": "{{reps}} × {{steps}} steps (+{{height}} m each)",
+    "stepsEstimated": "Step count estimated from the height (≈17 cm per step)."
   },
   "footer": {
     "data": {
@@ -175,5 +183,21 @@
     "saved": "Saved",
     "note": "Saved in this browser only. Distances are from your current search location.",
     "empty": "No favourites yet. Tap ☆ on a climb to keep it here, even offline."
+  },
+  "accuracy": {
+    "lidar": "Profile measured with IGN LiDAR HD (50 cm).",
+    "rge": "Profile measured with IGN RGE ALTI (1–5 m); LiDAR HD isn't available here yet.",
+    "coarse": "Profile from the detection grid; it's re-measured when the climb is shown in the list.",
+    "check": "Check on site: this profile may be off.",
+    "badge": "Check",
+    "reasons": {
+      "mismatch": "Fine and coarse measurements disagree, often a wall, embankment or cutting right next to the path.",
+      "roadTooSteep": "That's unusually steep for a road.",
+      "osmIncline": "OpenStreetMap says the slope is about {{incline}}%."
+    }
+  },
+  "chart": {
+    "rep": "Rep",
+    "hint": "Touch the profile for details"
   }
 }

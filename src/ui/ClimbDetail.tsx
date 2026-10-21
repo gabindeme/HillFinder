@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import type { Reach } from '../core/filters';
+import { reliability } from '../core/refine';
 import type { RankedClimb } from '../core/scoring';
 import { suggestSession } from '../core/session';
 import { climbName, fmtAway, fmtDuration, fmtGrade, fmtM, fmtNum, surfaceLabel } from './format';
@@ -21,6 +22,7 @@ interface Props {
 export function ClimbDetail({ climb, reach, detailed, showLit, favorite, onToggleFavorite, onBack }: Props) {
   const { t } = useTranslation();
   const session = suggestSession(climb);
+  const rel = reliability(climb);
   const start = climb.coords[0];
   const mid = climb.coords[Math.floor(climb.coords.length / 2)];
   // Walking directions to the bottom of the hill, on openstreetmap.org.
@@ -64,14 +66,37 @@ export function ClimbDetail({ climb, reach, detailed, showLit, favorite, onToggl
         </div>
       </dl>
 
-      <ProfileChart climb={climb} label={t('climb.profile')} />
+      <ProfileChart climb={climb} label={t('climb.profile')} section={session.kind === 'section' ? session : null} />
+
+      <section className="accuracy">
+        {rel.level === 'check' ? (
+          <p className="message">
+            ⚠ {t('accuracy.check')} {rel.reasons.map((r) => t(`accuracy.reasons.${r}`, { incline: fmtNum(climb.osmIncline ?? 0) })).join(' ')}
+          </p>
+        ) : (
+          <p className="muted">
+            {rel.level === 'verified' ? '✓ ' : ''}
+            {t(`accuracy.${climb.refined ?? 'coarse'}`)}
+          </p>
+        )}
+      </section>
 
       <section className="session">
         <h3>{t('session.title')}</h3>
         <p className="session-main">
-          {t(`session.${session.kind}`, { reps: session.reps, length: session.repLength, grade: fmtNum(session.avgGrade, 1) })}
+          {t(`session.${session.kind}`, {
+            reps: session.reps,
+            length: session.repLength,
+            grade: fmtNum(session.avgGrade, 1),
+            steps: session.steps,
+            height: session.repGain,
+            from: Math.round(session.from),
+            to: Math.round(session.to),
+          })}
         </p>
         <p className="muted">
+          {session.kind === 'section' && <>{t('session.sectionWhere', { from: Math.round(session.from), to: Math.round(session.to) })} </>}
+          {session.kind === 'stairs' && session.stepsEstimated && <>{t('session.stepsEstimated')} </>}
           {t('session.detail', {
             time: fmtDuration(session.repSeconds),
             gain: session.repGain,

@@ -894,3 +894,110 @@ button.link {
   background: var(--green);
   color: #fff;
 }
+
+/* Profile chart extras */
+.profile-figure {
+  margin: 0;
+}
+
+.profile {
+  touch-action: pan-y; /* horizontal drags read the profile; vertical still scrolls */
+  cursor: crosshair;
+}
+
+.section-band rect {
+  fill: #1565c0;
+  opacity: 0.12;
+}
+
+.section-band text {
+  fill: #1565c0;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.readout line {
+  stroke: #333;
+  stroke-dasharray: 2 2;
+}
+
+.readout circle {
+  fill: #fff;
+  stroke: #333;
+  stroke-width: 1.5;
+}
+
+.readout rect {
+  fill: rgb(28 31 29 / 0.85);
+}
+
+.profile .readout text {
+  fill: #fff;
+  font-size: 9.5px;
+  font-weight: 600;
+}
+
+.grade-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.7rem;
+  margin-top: 0.35rem;
+  font-size: 0.75rem;
+  align-items: center;
+}
+
+.grade-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.grade-legend i {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+.accuracy p {
+  margin: 0.5rem 0 0;
+  font-size: 0.85rem;
+}
+
+.tag.warn {
+  background: #fff8e1;
+  color: #8d6e00;
+}
+
+.tag.stairs {
+  background: #e3f2fd;
+  color: #0d47a1;
+}
+
+.measuring {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.recent {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+}
+
+.chip {
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.2rem 0.7rem;
+  min-height: 32px;
+  font-size: 0.8rem;
+}
+
+.map-loading {
+  background: #e8ece9;
+}
