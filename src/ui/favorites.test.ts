@@ -1,14 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { favoriteKey } from './favorites';
+import { sameClimb } from './favorites';
 
-describe('favoriteKey', () => {
+describe('sameClimb', () => {
   const climb = (lat: number) => ({ coords: [{ lat, lon: -1.67 }, { lat: lat + 0.002, lon: -1.669 }] });
 
   it('recognises the same hill despite metre-level differences between searches', () => {
-    expect(favoriteKey(climb(48.112551))).toBe(favoriteKey(climb(48.112549)));
+    // These straddle a 4-decimal rounding boundary, which broke key comparison.
+    expect(sameClimb(climb(48.112551), climb(48.112549))).toBe(true);
+    expect(sameClimb(climb(48.1125), climb(48.11265))).toBe(true); // ~17 m apart
   });
 
   it('distinguishes different hills', () => {
-    expect(favoriteKey(climb(48.1125))).not.toBe(favoriteKey(climb(48.1205)));
+    expect(sameClimb(climb(48.1125), climb(48.1205))).toBe(false);
   });
 });
