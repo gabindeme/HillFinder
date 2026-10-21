@@ -75,4 +75,6 @@ export interface Climb {
   highway: string;
   /** For unnamed climbs: the park it's in, or the nearest named street. */
   near?: { kind: 'in' | 'near'; name: string };
+  /** Public access information (see access.ts). */
+  access?: import('./access').Access;
 }

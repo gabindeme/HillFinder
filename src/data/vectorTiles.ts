@@ -10,7 +10,9 @@
  *    tile so neighbouring tiles join exactly at the boundary;
  *  - there are no node ids: vertices get ids from their global integer tile
  *    coordinates, which coincide wherever OSM ways share a node.
- * There is no `lit` tag in the schema, so lighting is unknown in this mode.
+ * There is no `lit` tag in the schema, so lighting is unknown in this mode,
+ * and neither are park opening hours or gates. Restricted areas (military,
+ * schools, prisons) are available from the landuse layer.
  */
 import { VectorTile, type VectorTileFeature } from '@mapbox/vector-tile';
 import { PbfReader } from 'pbf';
@@ -146,6 +148,14 @@ function ringArea(ring: Pt[]): number {
   return a / 2;
 }
 
+/** OpenMapTiles landuse classes → OSM tags understood by core/access.ts. */
+const RESTRICTED_LANDUSE: Record<string, Tags> = {
+  military: { landuse: 'military' },
+  prison: { amenity: 'prison' },
+  school: { amenity: 'school' },
+  kindergarten: { amenity: 'kindergarten' },
+};
+
 let nextId = 1;
 
 /** Converts one decoded tile into ways (paths + named park outlines). */
@@ -216,22 +226,24 @@ export function tileToWays(tile: VectorTile, tx: number, ty: number): OsmWay[] {
     }
   }
 
-  // Named parks, used only to label unnamed climbs ("Footpath in Parc du Thabor").
-  const park = tile.layers.park;
-  for (let i = 0; i < (park?.length ?? 0); i++) {
-    const f = park.feature(i);
-    if (f.type !== 3 || !f.properties.name) continue;
-    for (const ring of f.loadGeometry()) {
-      const pts = ring.map(g);
-      if (pts.length < 4 || ringArea(pts) <= 0) continue; // skip holes
-      ways.push({
-        id: -nextId++,
-        nodes: [],
-        geometry: pts.map(([x, y]) => globalToLatLon(x, y)),
-        tags: { leisure: 'park', name: String(f.properties.name) },
-      });
+  const pushAreas = (layer: string, tagsFor: (p: Record<string, unknown>) => Tags | null) => {
+    const l = tile.layers[layer];
+    for (let i = 0; i < (l?.length ?? 0); i++) {
+      const f = l.feature(i);
+      if (f.type !== 3) continue;
+      const tags = tagsFor(f.properties);
+      if (!tags) continue;
+      for (const ring of f.loadGeometry()) {
+        const pts = ring.map(g);
+        if (pts.length < 4 || ringArea(pts) <= 0) continue; // skip holes
+        ways.push({ id: -nextId++, nodes: [], geometry: pts.map(([x, y]) => globalToLatLon(x, y)), tags });
+      }
     }
-  }
+  };
+  // Named parks, used only to label unnamed climbs ("Footpath in Parc du Thabor").
+  pushAreas('park', (p) => (p.name ? { leisure: 'park', name: String(p.name) } : null));
+  // Restricted areas, to keep climbs on military bases or school grounds out.
+  pushAreas('landuse', (p) => RESTRICTED_LANDUSE[String(p.class)] ?? null);
   return ways;
 }
 

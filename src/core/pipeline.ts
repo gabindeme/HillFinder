@@ -5,6 +5,7 @@
  * runs once per search; changing filters only re-runs the cheap ranking step.
  */
 import { detectClimbs, maxGrade } from './climbs';
+import { annotateAccess } from './access';
 import { haversine } from './geo';
 import { labelUnnamed } from './naming';
 import { buildStrokes, splitIntoEdges } from './graph';
@@ -86,5 +87,6 @@ export function findCandidates(
   });
   onProgress?.(strokes.length, strokes.length);
   labelUnnamed(climbs, rawWays);
+  annotateAccess(climbs, rawWays);
   return climbs;
 }

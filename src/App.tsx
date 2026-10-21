@@ -83,7 +83,14 @@ export default function App() {
 
   const ranked = useMemo(
     // Without lighting data every path is "unknown", so the preference would only add noise.
-    () => (candidates ? rankClimbs(candidates, { ...filters, preferLit: filters.preferLit && hasLighting }) : null),
+    () =>
+      candidates
+        ? rankClimbs(candidates, {
+            ...filters,
+            preferLit: filters.preferLit && hasLighting,
+            openAllTimes: filters.openAllTimes && hasLighting,
+          })
+        : null,
     [candidates, filters, hasLighting],
   );
   const selected = ranked?.climbs.find((c) => c.id === selectedId) ?? null;
@@ -133,12 +140,16 @@ export default function App() {
                 </p>
               )}
               {status.partial && <p className="message">{t('status.partial')}</p>}
+              {ranked.hiddenRestricted > 0 && (
+                <p className="muted">{t('status.hidden', { count: ranked.hiddenRestricted })}</p>
+              )}
               <ClimbList climbs={ranked.climbs} reach={filters.reach} onSelect={setSelectedId} />
             </>
           )}
           {status.kind === 'done' && selected && <ClimbDetail
               climb={selected}
               reach={filters.reach}
+              detailed={hasLighting}
               showLit={hasLighting && filters.preferLit}
               onBack={() => setSelectedId(null)}
             />}

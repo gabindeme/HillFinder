@@ -8,15 +8,18 @@ import { ProfileChart } from './ProfileChart';
 interface Props {
   climb: RankedClimb;
   reach: Reach;
-  /** Show the share of lit path (only meaningful when the data has lighting info). */
+  /** The data source has lighting, opening hours and gates (detailed mode). */
+  detailed: boolean;
+  /** Show the share of lit path. */
   showLit: boolean;
   onBack: () => void;
 }
 
-export function ClimbDetail({ climb, reach, showLit, onBack }: Props) {
+export function ClimbDetail({ climb, reach, detailed, showLit, onBack }: Props) {
   const { t } = useTranslation();
   const session = suggestSession(climb);
   const start = climb.coords[0];
+  const mid = climb.coords[Math.floor(climb.coords.length / 2)];
   // Walking directions to the bottom of the hill, on openstreetmap.org.
   const directions = `https://www.openstreetmap.org/directions?engine=fossgis_osrm_foot&route=;${start.lat},${start.lon}`;
 
@@ -69,6 +72,27 @@ export function ClimbDetail({ climb, reach, showLit, onBack }: Props) {
             total: session.repGain * session.reps,
           })}{' '}
           {t('session.warmup')}
+        </p>
+      </section>
+
+      <section className="access">
+        <h3>{t('access.title')}</h3>
+        {climb.access?.hours ? (
+          <p className="message">🕗 {t('access.hours', { hours: climb.access.hours })}</p>
+        ) : (
+          <p>
+            {t('access.clear')} {!detailed && <span className="muted">{t('access.noHoursCheck')}</span>}
+          </p>
+        )}
+        <p className="muted">
+          {t('access.disclaimer')}{' '}
+          <a href={`https://www.openstreetmap.org/#map=18/${mid.lat}/${mid.lon}`} target="_blank" rel="noreferrer">
+            {t('access.view')}
+          </a>{' '}
+          ·{' '}
+          <a href={`https://www.openstreetmap.org/note/new#map=18/${mid.lat}/${mid.lon}`} target="_blank" rel="noreferrer">
+            {t('access.report')}
+          </a>
         </p>
       </section>
 

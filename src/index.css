@@ -597,3 +597,32 @@ button.link {
   margin-top: auto;
   font-size: 0.75rem;
 }
+
+.tag {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  background: #fff3e0;
+  color: #8d4b00;
+  font-size: 0.75rem;
+}
+
+.access {
+  margin-top: 1rem;
+}
+
+.access h3 {
+  font-size: 0.95rem;
+  margin: 0 0 0.4rem;
+}
+
+.access p {
+  margin: 0.3rem 0;
+  font-size: 0.9rem;
+}
+
+.access a {
+  color: var(--green);
+  font-weight: 600;
+}

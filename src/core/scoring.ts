@@ -12,6 +12,7 @@
  * percentile (rather than the max) stops a single outlier from squashing
  * everyone else's score.
  */
+import { isAccessible } from './access';
 import { dedupe } from './dedupe';
 import { BUSY_ROAD_SAFETY, effectiveRadiusKm, type Filters, type Priority } from './filters';
 import type { Climb } from './types';
@@ -99,6 +100,7 @@ export function passes(c: Climb, f: Filters): boolean {
   if (f.surface === 'trail' && c.trail < 0.5) return false;
   if (f.surface === 'road' && c.trail > 0.5) return false;
   if (f.avoidTraffic && c.safety < BUSY_ROAD_SAFETY) return false;
+  if (f.openAllTimes && c.access?.hours) return false;
   return true;
 }
 
@@ -127,6 +129,7 @@ function relaxations(f: Filters): Filters[] {
       maxGrade: null,
       surface: 'any',
       avoidTraffic: false,
+      openAllTimes: false,
     },
   ];
 }
@@ -138,18 +141,27 @@ export interface RankResult {
   climbs: RankedClimb[];
   /** 0 = user filters as set; >0 = filters had to be loosened. */
   relaxLevel: number;
+  /** Climbs within the area hidden because they aren't publicly accessible. */
+  hiddenRestricted: number;
 }
 
-export function rankClimbs(candidates: Climb[], filters: Filters): RankResult {
+export function rankClimbs(all: Climb[], filters: Filters): RankResult {
+  // Access restrictions are never relaxed: we don't send people onto military
+  // bases or through locked gates just to have something to show.
+  const radius = effectiveRadiusKm(filters) * 1000;
+  const candidates = all.filter(isAccessible);
+  const hiddenRestricted = dedupe(
+    all.filter((c) => !isAccessible(c) && c.distance <= radius).sort((a, b) => b.gain - a.gain),
+  ).length;
   const levels = relaxations(filters);
-  let best: RankResult = { climbs: [], relaxLevel: 0 };
+  let best: RankResult = { climbs: [], relaxLevel: 0, hiddenRestricted };
   for (let level = 0; level < levels.length; level++) {
     const kept = candidates.filter((c) => passes(c, levels[level]));
     // Score against the original filters' weights; only the gates are relaxed.
     const scored = scoreClimbs(kept, filters).sort((a, b) => b.score - a.score);
     const unique = dedupe(scored, MAX_RESULTS);
     unique.forEach((c, i) => (c.rank = i + 1));
-    best = { climbs: unique, relaxLevel: level };
+    best = { climbs: unique, relaxLevel: level, hiddenRestricted };
     if (unique.length >= MIN_RESULTS) break;
   }
   return best;

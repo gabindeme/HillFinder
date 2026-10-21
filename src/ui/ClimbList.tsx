@@ -27,6 +27,7 @@ export function ClimbList({ climbs, reach, onSelect }: Props) {
               </span>
               <span className="climb-meta">
                 {fmtAway(c, reach, t)} · {surfaceLabel(c, t)}
+                {c.access?.hours && <span className="tag">🕗 {t('access.hoursBadge')}</span>}
               </span>
             </span>
             <span className="score" title={t('climb.score')}>

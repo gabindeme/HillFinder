@@ -66,7 +66,10 @@
     "sourceHints": {
       "fast": "Searches in seconds. No lighting info, fewer park names.",
       "detailed": "Full OpenStreetMap details incl. lighting. First search in an area can take a minute."
-    }
+    },
+    "openAllTimes": "Open at all times",
+    "openAllTimesHint": "Hide parks with opening hours",
+    "noHours": "Needs the detailed data source (below)"
   },
   "status": {
     "download": "Downloading paths & elevation ({{done}}/{{total}})…",
@@ -78,7 +81,9 @@
     "empty": "No climbs found in this area. Elevation data currently covers France only.",
     "partial": "Some elevation data couldn't be downloaded, so a few hills may be missing. Search again later to fill the gaps.",
     "relaxed": "Few hills match your filters here, so these are the best available.",
-    "found": "{{count}} climbs within {{radius}} km"
+    "found": "{{count}} climbs within {{radius}} km",
+    "hidden_one": "1 climb hidden: not publicly accessible.",
+    "hidden_other": "{{count}} climbs hidden: not publicly accessible."
   },
   "climb": {
     "unnamed": "Unnamed {{kind}}",
@@ -139,5 +144,15 @@
       "detailed": "Paths © OpenStreetMap contributors (Overpass API) · Elevation © IGN (RGE ALTI)"
     },
     "resolution": "Elevation grid ≈ {{m}} m"
+  },
+  "access": {
+    "title": "Access",
+    "hoursBadge": "Park hours",
+    "hours": "In a park with opening hours: {{hours}}",
+    "noHoursCheck": "Opening hours and gates aren't checked with fast data.",
+    "clear": "No access restriction found on the map.",
+    "disclaimer": "From OpenStreetMap: signs on site always take precedence.",
+    "view": "View on OpenStreetMap",
+    "report": "Report a problem"
   }
 }

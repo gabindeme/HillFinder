@@ -31,7 +31,7 @@ interface Props {
 }
 
 export function FilterBar({ filters, onChange, onAreaCommit, source, onSource }: Props) {
-  // Only OSM's `lit` tag (detailed source) tells us about lighting.
+  // Lighting (OSM `lit`) and opening hours are only in the detailed source.
   const hasLighting = source === 'detailed';
   const { t } = useTranslation();
   const set = <K extends keyof Filters>(key: K, value: Filters[K]) => onChange({ ...filters, [key]: value });
@@ -166,6 +166,19 @@ export function FilterBar({ filters, onChange, onAreaCommit, source, onSource }:
             <span>
               {t('filters.avoidTraffic')}
               <small className="muted">{t('filters.avoidTrafficHint')}</small>
+            </span>
+          </label>
+
+          <label className={`check wide${hasLighting ? '' : ' disabled'}`}>
+            <input
+              type="checkbox"
+              checked={filters.openAllTimes && hasLighting}
+              disabled={!hasLighting}
+              onChange={(e) => set('openAllTimes', e.target.checked)}
+            />
+            <span>
+              {t('filters.openAllTimes')}
+              <small className="muted">{hasLighting ? t('filters.openAllTimesHint') : t('filters.noHours')}</small>
             </span>
           </label>
 

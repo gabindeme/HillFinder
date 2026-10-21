@@ -40,8 +40,8 @@ console.timeEnd('detect');
 console.log(candidates.length, 'candidates');
 
 for (const priority of ['balanced', 'steepest'] as const) {
-  const { climbs, relaxLevel } = rankClimbs(candidates, { ...DEFAULT_FILTERS, radiusKm, priority });
-  console.log(`\n== ${priority} (relax ${relaxLevel}) ==`);
+  const { climbs, relaxLevel, hiddenRestricted } = rankClimbs(candidates, { ...DEFAULT_FILTERS, radiusKm, priority });
+  console.log(`\n== ${priority} (relax ${relaxLevel}, ${hiddenRestricted} hidden as not accessible) ==`);
   for (const c of climbs.slice(0, 10)) {
     const s = suggestSession(c);
     console.log(

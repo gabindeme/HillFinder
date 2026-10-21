@@ -32,14 +32,23 @@ const MAX_AGE = 7 * DAY;
 function query(center: LatLon, radius: number): string {
   const hw = RUNNABLE_HIGHWAYS.join('|');
   const around = `around:${Math.round(radius)},${center.lat.toFixed(5)},${center.lon.toFixed(5)}`;
-  // Runnable ways, plus named parks and woods used to label unnamed climbs.
+  // Runnable ways; named parks and woods (labels, opening hours); restricted
+  // areas and closed gates (see core/access.ts).
   return `[out:json][timeout:90];
 (
   way(${around})[highway~"^(${hw})$"][area!=yes][foot!=no]
     [service!~"^(driveway|parking_aisle|drive-through)$"];
   wr(${around})[leisure~"^(park|garden|nature_reserve)$"][name];
+  wr(${around})[leisure~"^(park|garden)$"][opening_hours];
   wr(${around})[landuse=forest][name];
   wr(${around})[natural=wood][name];
+  wr(${around})[landuse=military];
+  wr(${around})[military][military!=no];
+  wr(${around})[amenity~"^(prison|school|kindergarten)$"];
+  wr(${around})[access~"^(private|no)$"][!highway][!building][!barrier];
+  node(${around})[barrier][access~"^(private|no)$"];
+  node(${around})[barrier][foot~"^(private|no)$"];
+  node(${around})[barrier][locked=yes];
 );
 out body geom qt;`;
 }
@@ -47,6 +56,8 @@ out body geom qt;`;
 interface OverpassElement {
   type: string;
   id: number;
+  lat?: number;
+  lon?: number;
   nodes?: number[];
   geometry?: LatLon[];
   tags?: Record<string, string>;
@@ -56,7 +67,7 @@ interface OverpassElement {
 const toLatLon = (g: LatLon[]) => g.map((p) => ({ lat: p.lat, lon: p.lon }));
 
 /**
- * Overpass elements to ways. Named area relations (e.g. Parc du Thabor is a
+ * Overpass elements to ways. Area relations (e.g. Parc du Thabor is a
  * multipolygon) become one pseudo-way per outer ring, with a negative id;
  * they're only used for labelling, never for routing.
  */
@@ -65,6 +76,9 @@ function toWays(elements: OverpassElement[]): OsmWay[] {
   for (const e of elements) {
     if (e.type === 'way' && e.nodes && e.geometry) {
       ways.push({ id: e.id, nodes: e.nodes, geometry: toLatLon(e.geometry), tags: e.tags ?? {} });
+    } else if (e.type === 'node' && e.lat !== undefined && e.lon !== undefined) {
+      // Barrier nodes become one-point pseudo-ways (never routable: no highway tag).
+      ways.push({ id: -e.id, nodes: [], geometry: [{ lat: e.lat, lon: e.lon }], tags: e.tags ?? {} });
     } else if (e.type === 'relation' && e.members) {
       const outers = e.members.filter((m) => m.type === 'way' && m.role !== 'inner' && m.geometry);
       for (const ring of stitchRings(outers.map((m) => toLatLon(m.geometry!)))) {
@@ -78,7 +92,7 @@ function toWays(elements: OverpassElement[]): OsmWay[] {
 export async function fetchWays(center: LatLon, radius: number, signal?: AbortSignal): Promise<OsmWay[]> {
   // Round the centre and radius so small moves of the origin reuse the same download.
   const r = Math.ceil(radius / 500) * 500;
-  const key = `osm3:${center.lat.toFixed(3)}:${center.lon.toFixed(3)}:${r}`;
+  const key = `osm4:${center.lat.toFixed(3)}:${center.lon.toFixed(3)}:${r}`;
   const cached = await cacheGet<OsmWay[]>(key, MAX_AGE);
   if (cached) return cached;
 

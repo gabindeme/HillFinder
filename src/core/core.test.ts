@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { annotateAccess, isAccessible, isClosedBarrier, restrictionOf } from './access';
 import { detectClimbs, maxGrade, scanAscents } from './climbs';
 import { dedupe } from './dedupe';
 import { activeFilterCount, DEFAULT_FILTERS, effectiveRadiusKm } from './filters';
@@ -213,5 +214,47 @@ describe('filters', () => {
     const busy = { distance: 100, length: 300, gain: 20, avgGrade: 6.7, maxGrade: 8, trail: 0, safety: 0.1 } as Climb;
     expect(passes(busy, { ...DEFAULT_FILTERS, avoidTraffic: true })).toBe(false);
     expect(passes(busy, { ...DEFAULT_FILTERS, avoidTraffic: false })).toBe(true);
+  });
+});
+
+describe('access', () => {
+  const climbAlong = (dx: number) =>
+    ({ coords: Array.from({ length: 41 }, (_, i) => pt(i * 5, dx)), names: [] }) as unknown as Climb;
+  const area = (tags: Record<string, string>): OsmWay => ({
+    id: -1, nodes: [],
+    geometry: [pt(-50, -50), pt(-50, 50), pt(250, 50), pt(250, -50), pt(-50, -50)],
+    tags,
+  });
+
+  it('flags climbs inside a military area even if the path itself has no access tag', () => {
+    const c = climbAlong(0);
+    annotateAccess([c], [area({ landuse: 'military', name: 'Quartier Leschi' })]);
+    expect(c.access?.restricted).toBe('military');
+    expect(isAccessible(c)).toBe(false);
+  });
+
+  it('keeps climbs outside restricted areas and reports park opening hours', () => {
+    const outside = climbAlong(500);
+    const inPark = climbAlong(0);
+    annotateAccess([outside, inPark], [area({ leisure: 'park', name: 'Parc du Thabor', opening_hours: '07:30-20:30' })]);
+    expect(isAccessible(outside)).toBe(true);
+    expect(inPark.access?.hours).toBe('07:30-20:30');
+    expect(isAccessible(inPark)).toBe(true);
+  });
+
+  it('blocks climbs through a locked gate but not an ordinary gate', () => {
+    const c = climbAlong(0);
+    const gate = (tags: Record<string, string>): OsmWay => ({ id: -2, nodes: [], geometry: [pt(100, 0)], tags });
+    annotateAccess([c], [gate({ barrier: 'gate' })]);
+    expect(c.access?.closedGate).toBe(false);
+    annotateAccess([c], [gate({ barrier: 'gate', locked: 'yes' })]);
+    expect(c.access?.closedGate).toBe(true);
+  });
+
+  it('classifies restriction kinds', () => {
+    expect(restrictionOf({ amenity: 'school' })).toBe('school');
+    expect(restrictionOf({ access: 'private', landuse: 'grass' })).toBe('private');
+    expect(restrictionOf({ highway: 'service', access: 'private' })).toBeNull();
+    expect(isClosedBarrier({ barrier: 'gate', access: 'private', foot: 'yes' })).toBe(false);
   });
 });
