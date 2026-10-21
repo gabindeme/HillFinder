@@ -7,6 +7,7 @@ import { bboxAround } from '../core/geo';
 import { findCandidates } from '../core/pipeline';
 import { loadElevation } from '../data/ignElevation';
 import { fetchWays, OverpassBusyError } from '../data/overpass';
+import { fetchWaysFromTiles } from '../data/vectorTiles';
 import type { SearchRequest, WorkerMessage } from './protocol';
 
 declare const self: DedicatedWorkerGlobalScope;
@@ -19,24 +20,34 @@ const ELEVATION_MARGIN = 1500;
 const post = (msg: WorkerMessage) => self.postMessage(msg);
 
 self.onmessage = async (e: MessageEvent<SearchRequest>) => {
-  const { id, origin, radiusKm } = e.data;
+  const { id, origin, radiusKm, source } = e.data;
   const radius = radiusKm * 1000;
   try {
     // Paths and elevation are independent: download both at once, reporting
-    // combined progress (each elevation tile is one step, the paths one more).
-    let tiles = { done: 0, total: 1 };
-    let pathsDone = 0;
+    // combined progress.
+    let elevation = { done: 0, total: 1 };
+    let paths = { done: 0, total: 1 };
     const report = () =>
-      post({ type: 'progress', id, stage: 'download', done: tiles.done + pathsDone, total: tiles.total + 1 });
+      post({
+        type: 'progress', id, stage: 'download',
+        done: elevation.done + paths.done, total: elevation.total + paths.total,
+      });
     report();
+    const pathsPromise =
+      source === 'fast'
+        ? fetchWaysFromTiles(bboxAround(origin, radius + PATH_MARGIN), (done, total) => {
+            paths = { done, total };
+            report();
+          })
+        : fetchWays(origin, radius + PATH_MARGIN).then((w) => {
+            paths = { done: 1, total: 1 };
+            report();
+            return w;
+          });
     const [ways, grid] = await Promise.all([
-      fetchWays(origin, radius + PATH_MARGIN).then((w) => {
-        pathsDone = 1;
-        report();
-        return w;
-      }),
+      pathsPromise,
       loadElevation(bboxAround(origin, radius + ELEVATION_MARGIN), (done, total) => {
-        tiles = { done, total };
+        elevation = { done, total };
         report();
       }),
     ]);

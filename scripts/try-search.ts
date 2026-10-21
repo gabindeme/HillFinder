@@ -1,6 +1,6 @@
 /**
  * Dev script: run the full climb search from the command line.
- * Usage: pnpm try [lat] [lon] [radiusKm] [ways.json]
+ * Usage: pnpm try [lat] [lon] [radiusKm] [ways.json | --fast]
  * Defaults to central Rennes, 5 km.
  */
 import { readFileSync } from 'node:fs';
@@ -12,6 +12,7 @@ import { suggestSession } from '../src/core/session';
 import type { OsmWay } from '../src/core/types';
 import { loadElevation } from '../src/data/ignElevation';
 import { fetchWays } from '../src/data/overpass';
+import { fetchWaysFromTiles } from '../src/data/vectorTiles';
 
 const [lat = 48.1113, lon = -1.68, radiusKm = 5] = process.argv.slice(2, 5).map(Number);
 const waysFile = process.argv[5];
@@ -19,9 +20,12 @@ const origin = { lat, lon };
 const radius = radiusKm * 1000;
 
 console.time('ways');
-const ways: OsmWay[] = waysFile
-  ? (JSON.parse(readFileSync(waysFile, 'utf8')).elements as OsmWay[]).filter((e) => e.nodes)
-  : await fetchWays(origin, radius + 500);
+const ways: OsmWay[] =
+  waysFile === '--fast'
+    ? await fetchWaysFromTiles(bboxAround(origin, radius + 500))
+    : waysFile
+      ? (JSON.parse(readFileSync(waysFile, 'utf8')).elements as OsmWay[]).filter((e) => e.nodes)
+      : await fetchWays(origin, radius + 500);
 console.timeEnd('ways');
 console.log(ways.length, 'ways');
 

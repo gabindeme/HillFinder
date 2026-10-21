@@ -54,10 +54,19 @@
     "avoidTrafficHint": "Prefer paths, parks and quiet streets",
     "preferLit": "Prefer lit paths",
     "preferLitHint": "For evening runs",
-    "noLighting": "Not available with the fast data source",
+    "noLighting": "Needs the detailed data source (below)",
     "reset": "Reset filters",
     "min": "Minimum",
-    "max": "Maximum"
+    "max": "Maximum",
+    "source": "Map data",
+    "sources": {
+      "fast": "Fast",
+      "detailed": "Detailed"
+    },
+    "sourceHints": {
+      "fast": "Searches in seconds. No lighting info, fewer park names.",
+      "detailed": "Full OpenStreetMap details incl. lighting. First search in an area can take a minute."
+    }
   },
   "status": {
     "download": "Downloading paths & elevation ({{done}}/{{total}})…",
@@ -125,7 +134,10 @@
     "warmup": "Warm up 15 min easy first."
   },
   "footer": {
-    "data": "Map & paths © OpenStreetMap contributors · Elevation © IGN (RGE ALTI)",
+    "data": {
+      "fast": "Paths © OpenMapTiles via OpenFreeMap · © OpenStreetMap contributors · Elevation © IGN (RGE ALTI)",
+      "detailed": "Paths © OpenStreetMap contributors (Overpass API) · Elevation © IGN (RGE ALTI)"
+    },
     "resolution": "Elevation grid ≈ {{m}} m"
   }
 }

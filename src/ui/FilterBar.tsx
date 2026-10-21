@@ -14,21 +14,25 @@ import {
   type Reach,
   type Surface,
 } from '../core/filters';
+import type { DataSource } from '../worker/protocol';
 
 const PRIORITIES: Priority[] = ['balanced', 'steepest', 'longest', 'gain', 'closest', 'trail'];
 const REACHES: Reach[] = ['distance', 'foot', 'bike'];
 const SURFACES: Surface[] = ['any', 'trail', 'road'];
+const SOURCES: DataSource[] = ['fast', 'detailed'];
 
 interface Props {
   filters: Filters;
   onChange: (f: Filters) => void;
   /** Called when the user lets go of a control that changes the search area. */
   onAreaCommit: (f: Filters) => void;
-  /** False when the data source has no lighting information. */
-  hasLighting: boolean;
+  source: DataSource;
+  onSource: (s: DataSource) => void;
 }
 
-export function FilterBar({ filters, onChange, onAreaCommit, hasLighting }: Props) {
+export function FilterBar({ filters, onChange, onAreaCommit, source, onSource }: Props) {
+  // Only OSM's `lit` tag (detailed source) tells us about lighting.
+  const hasLighting = source === 'detailed';
   const { t } = useTranslation();
   const set = <K extends keyof Filters>(key: K, value: Filters[K]) => onChange({ ...filters, [key]: value });
   const commit = (patch: Partial<Filters>) => onAreaCommit({ ...filters, ...patch });
@@ -187,6 +191,18 @@ export function FilterBar({ filters, onChange, onAreaCommit, hasLighting }: Prop
         >
           {t('filters.reset')}
         </button>
+
+        <fieldset className="field source">
+          <legend>{t('filters.source')}</legend>
+          <div className="segmented">
+            {SOURCES.map((s) => (
+              <button key={s} type="button" aria-pressed={source === s} onClick={() => onSource(s)}>
+                {t(`filters.sources.${s}`)}
+              </button>
+            ))}
+          </div>
+          <small className="muted">{t(`filters.sourceHints.${source}`)}</small>
+        </fieldset>
       </details>
     </div>
   );

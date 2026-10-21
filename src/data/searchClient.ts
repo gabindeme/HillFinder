@@ -1,6 +1,6 @@
 /** Promise-based wrapper around the search worker. */
 import type { Climb, LatLon } from '../core/types';
-import type { SearchStage, WorkerMessage } from '../worker/protocol';
+import type { DataSource, SearchStage, WorkerMessage } from '../worker/protocol';
 
 export interface SearchProgress {
   stage: SearchStage;
@@ -29,6 +29,7 @@ let nextId = 1;
 export function searchClimbs(
   origin: LatLon,
   radiusKm: number,
+  source: DataSource,
   onProgress: (p: SearchProgress) => void,
 ): Promise<SearchOutcome> {
   worker ??= new Worker(new URL('../worker/search.worker.ts', import.meta.url), { type: 'module' });
@@ -46,6 +47,6 @@ export function searchClimbs(
       }
     };
     w.addEventListener('message', onMessage);
-    w.postMessage({ id, origin, radiusKm });
+    w.postMessage({ id, origin, radiusKm, source });
   });
 }

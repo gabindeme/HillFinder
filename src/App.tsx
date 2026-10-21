@@ -5,6 +5,7 @@ import { rankClimbs } from './core/scoring';
 import type { Climb } from './core/types';
 import type { Place } from './data/nominatim';
 import { SearchError, searchClimbs, type SearchProgress } from './data/searchClient';
+import type { DataSource } from './worker/protocol';
 import { ClimbDetail } from './ui/ClimbDetail';
 import { ClimbList } from './ui/ClimbList';
 import { FilterBar } from './ui/FilterBar';
@@ -25,6 +26,7 @@ export default function App() {
   const { t } = useTranslation();
   const [origin, setOrigin] = useStored<Place | null>('hillfinder.origin', null);
   const [filters, setFilters] = useFilters();
+  const [source, setSource] = useStored<DataSource>('hillfinder.source', 'fast');
   // Radius the current candidates were searched with. Shrinking the slider
   // just filters them; growing it beyond this triggers a new search.
   const searchRadius = useRef(effectiveRadiusKm(filters));
@@ -34,13 +36,13 @@ export default function App() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const latest = useRef(0);
 
-  const run = useCallback(async (place: Place, radiusKm: number) => {
+  const run = useCallback(async (place: Place, radiusKm: number, src: DataSource) => {
     const id = ++latest.current;
     searchRadius.current = radiusKm;
     setStatus({ kind: 'loading', progress: null });
     setSelectedId(null);
     try {
-      const out = await searchClimbs(place, radiusKm, (progress) => {
+      const out = await searchClimbs(place, radiusKm, src, (progress) => {
         if (id === latest.current) setStatus({ kind: 'loading', progress });
       });
       if (id !== latest.current) return;
@@ -56,24 +58,34 @@ export default function App() {
 
   // Re-run the last search on startup (served from cache when recent).
   const restored = useRef(origin);
+  const restoredSource = useRef(source);
   useEffect(() => {
-    if (restored.current) void run(restored.current, searchRadius.current);
+    if (restored.current) void run(restored.current, searchRadius.current, restoredSource.current);
   }, [run]);
 
   const onPlace = (place: Place) => {
     setOrigin(place);
-    void run(place, effectiveRadiusKm(filters));
+    void run(place, effectiveRadiusKm(filters), source);
+  };
+
+  const onSource = (s: DataSource) => {
+    setSource(s);
+    if (origin) void run(origin, searchRadius.current, s);
   };
 
   const onAreaCommit = (f: Filters) => {
     const km = effectiveRadiusKm(f);
-    if (origin && km > searchRadius.current) void run(origin, km);
+    if (origin && km > searchRadius.current) void run(origin, km, source);
   };
   const radiusKm = effectiveRadiusKm(filters);
-  // Lighting comes from OSM `lit` tags, available with the detailed data source.
-  const hasLighting = true;
+  // Lighting comes from OSM `lit` tags, only available with the detailed source.
+  const hasLighting = source === 'detailed';
 
-  const ranked = useMemo(() => (candidates ? rankClimbs(candidates, filters) : null), [candidates, filters]);
+  const ranked = useMemo(
+    // Without lighting data every path is "unknown", so the preference would only add noise.
+    () => (candidates ? rankClimbs(candidates, { ...filters, preferLit: filters.preferLit && hasLighting }) : null),
+    [candidates, filters, hasLighting],
+  );
   const selected = ranked?.climbs.find((c) => c.id === selectedId) ?? null;
 
   return (
@@ -92,14 +104,20 @@ export default function App() {
           )}
         </header>
 
-        <FilterBar filters={filters} onChange={setFilters} onAreaCommit={onAreaCommit} hasLighting={hasLighting} />
+        <FilterBar
+          filters={filters}
+          onChange={setFilters}
+          onAreaCommit={onAreaCommit}
+          source={source}
+          onSource={onSource}
+        />
 
         <div className="results" aria-live="polite">
           {status.kind === 'loading' && <StatusLine progress={status.progress} />}
           {status.kind === 'error' && (
             <p className="message" role="alert">
               {status.message}{' '}
-              <button type="button" className="link" onClick={() => origin && run(origin, searchRadius.current)}>
+              <button type="button" className="link" onClick={() => origin && run(origin, searchRadius.current, source)}>
                 {t('status.retry')}
               </button>
             </p>
@@ -127,7 +145,7 @@ export default function App() {
         </div>
 
         <footer className="footer muted">
-          {t('footer.data')}
+          {t(`footer.data.${source}`)}
           {resolution && <> · {t('footer.resolution', { m: resolution.toFixed(0) })}</>}
         </footer>
       </aside>
