@@ -15,6 +15,7 @@ import {
   type Surface,
 } from '../core/filters';
 import type { DataSource } from '../worker/protocol';
+import { fmtNum } from './format';
 
 const PRIORITIES: Priority[] = ['balanced', 'steepest', 'longest', 'gain', 'closest', 'trail'];
 const REACHES: Reach[] = ['distance', 'foot', 'bike'];
@@ -62,7 +63,7 @@ export function FilterBar({ filters, onChange, onAreaCommit, source, onSource }:
           <label className="range">
             <span>
               {t('filters.travelTime')} <strong>{t('filters.minutes', { n: filters.travelMinutes })}</strong>{' '}
-              <span className="muted">{t('filters.approxRadius', { km: effectiveRadiusKm(filters) })}</span>
+              <span className="muted">{t('filters.approxRadius', { km: fmtNum(effectiveRadiusKm(filters), 1) })}</span>
             </span>
             <input
               type="range"

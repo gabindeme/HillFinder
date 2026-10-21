@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import type { Reach } from '../core/filters';
 import type { RankedClimb } from '../core/scoring';
 import { suggestSession } from '../core/session';
-import { climbName, fmtAway, fmtDuration, fmtGrade, fmtM, surfaceLabel } from './format';
+import { climbName, fmtAway, fmtDuration, fmtGrade, fmtM, fmtNum, surfaceLabel } from './format';
 import { StarButton } from './ClimbList';
 import { ProfileChart } from './ProfileChart';
 
@@ -69,7 +69,7 @@ export function ClimbDetail({ climb, reach, detailed, showLit, favorite, onToggl
       <section className="session">
         <h3>{t('session.title')}</h3>
         <p className="session-main">
-          {t(`session.${session.kind}`, { reps: session.reps, length: session.repLength, grade: session.avgGrade })}
+          {t(`session.${session.kind}`, { reps: session.reps, length: session.repLength, grade: fmtNum(session.avgGrade, 1) })}
         </p>
         <p className="muted">
           {t('session.detail', {

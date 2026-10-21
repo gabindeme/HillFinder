@@ -1,0 +1,179 @@
+{
+  "app": {
+    "name": "HillFinder",
+    "tagline": "La meilleure côte près de chez vous pour vos fractionnés"
+  },
+  "lang": {
+    "label": "Langue",
+    "en": "EN",
+    "fr": "FR"
+  },
+  "location": {
+    "placeholder": "Adresse, ville ou lieu",
+    "search": "Rechercher",
+    "useMyLocation": "Utiliser ma position",
+    "locating": "Localisation…",
+    "permissionTitle": "Utiliser votre position ?",
+    "permissionBody": "Votre navigateur va demander l'autorisation. Votre position sert uniquement à chercher des côtes autour de vous ; elle n'est ni enregistrée ni partagée.",
+    "allow": "Continuer",
+    "cancel": "Annuler",
+    "denied": "L'accès à la position a été refusé. Saisissez plutôt une adresse.",
+    "unavailable": "Impossible d'obtenir votre position. Saisissez plutôt une adresse.",
+    "noResults": "Aucun lieu trouvé pour « {{query}} ».",
+    "error": "La recherche d'adresse a échoué. Réessayez.",
+    "tryExample": "Essayer avec {{place}}",
+    "myPosition": "Ma position"
+  },
+  "filters": {
+    "radius": "Rayon",
+    "priority": "Meilleure =",
+    "priorities": {
+      "balanced": "Équilibrée",
+      "steepest": "La plus raide",
+      "longest": "La plus longue",
+      "gain": "Le plus de D+",
+      "closest": "La plus proche",
+      "trail": "La plus nature"
+    },
+    "reach": "Zone de recherche",
+    "reaches": {
+      "distance": "Distance",
+      "foot": "En courant",
+      "bike": "À vélo"
+    },
+    "travelTime": "Trajet max",
+    "minutes": "{{n}} min",
+    "approxRadius": "(≈ {{km}} km)",
+    "more": "Plus de filtres",
+    "length": "Longueur de la côte",
+    "avgGrade": "Pente moyenne",
+    "minGain": "Dénivelé positif minimum",
+    "maxGrade": "Limiter la portion la plus raide",
+    "surface": "Revêtement",
+    "surfaces": {
+      "any": "Tous",
+      "trail": "Chemin / terre",
+      "road": "Route / bitume"
+    },
+    "avoidTraffic": "Éviter les routes passantes",
+    "avoidTrafficHint": "Privilégier chemins, parcs et rues calmes",
+    "preferLit": "Privilégier les chemins éclairés",
+    "preferLitHint": "Pour courir le soir",
+    "noLighting": "Nécessite les données détaillées (plus bas)",
+    "reset": "Réinitialiser les filtres",
+    "min": "Minimum",
+    "max": "Maximum",
+    "source": "Données cartographiques",
+    "sources": {
+      "fast": "Rapides",
+      "detailed": "Détaillées"
+    },
+    "sourceHints": {
+      "fast": "Recherche en quelques secondes. Sans éclairage, moins de noms de parcs.",
+      "detailed": "Tous les détails OpenStreetMap, éclairage compris. La première recherche dans une zone peut prendre une minute."
+    },
+    "openAllTimes": "Accessible à toute heure",
+    "openAllTimesHint": "Masquer les parcs avec horaires d'ouverture",
+    "noHours": "Nécessite les données détaillées (plus bas)"
+  },
+  "status": {
+    "slow": "La première recherche détaillée dans une zone peut prendre une minute ; elle est ensuite mise en cache.",
+    "error": "La recherche a échoué : {{message}}",
+    "busy": "Les serveurs OpenStreetMap sont surchargés. Réessayez dans quelques minutes.",
+    "offline": "Vous êtes hors ligne. Vos favoris restent disponibles ; la recherche reprendra avec le réseau.",
+    "retry": "Réessayer",
+    "empty": "Aucune côte trouvée dans cette zone. Les données d'altitude couvrent uniquement la France pour l'instant.",
+    "partial": "Certaines données d'altitude n'ont pas pu être téléchargées : quelques côtes peuvent manquer. Relancez la recherche plus tard.",
+    "relaxed": "Peu de côtes correspondent à vos filtres ici : voici les meilleures disponibles.",
+    "found_one": "{{count}} côte dans un rayon de {{radius}} km",
+    "found_other": "{{count}} côtes dans un rayon de {{radius}} km",
+    "hidden_one": "{{count}} côte masquée : accès non public.",
+    "hidden_other": "{{count}} côtes masquées : accès non public.",
+    "nearby": "Recherche des côtes autour de vous…",
+    "download": "Recherche dans toute la zone de {{km}} km…",
+    "analysis": "Sélection des meilleures côtes…",
+    "showingNearby": "Côtes à moins de {{km}} km affichées en attendant la recherche complète."
+  },
+  "climb": {
+    "unnamed": "{{kind}} sans nom",
+    "in": "{{kind}} ({{name}})",
+    "near": "{{kind}} (près de {{name}})",
+    "kinds": {
+      "footway": "chemin piéton",
+      "path": "sentier",
+      "track": "chemin",
+      "cycleway": "piste cyclable",
+      "bridleway": "chemin équestre",
+      "pedestrian": "rue piétonne",
+      "residential": "rue",
+      "living_street": "rue",
+      "service": "voie de desserte",
+      "unclassified": "route",
+      "tertiary": "route",
+      "secondary": "route",
+      "primary": "route principale"
+    },
+    "length": "Longueur",
+    "gain": "D+",
+    "avgGrade": "Moy.",
+    "maxGrade": "Max",
+    "away": "à {{km}} km",
+    "trail": "Chemin",
+    "road": "Route",
+    "mixed": "Mixte",
+    "score": "Score",
+    "back": "Toutes les côtes",
+    "openMaps": "Itinéraire",
+    "why": "Détail du score",
+    "profile": "Profil d'altitude",
+    "awayFoot": "≈ {{min}} min en courant",
+    "awayBike": "≈ {{min}} min à vélo",
+    "lit": "{{pct}} % éclairé"
+  },
+  "factors": {
+    "steepness": "Pente",
+    "gain": "Dénivelé",
+    "length": "Longueur",
+    "proximity": "Proximité",
+    "trail": "Terrain nature",
+    "safety": "Calme / sans voitures",
+    "lit": "Éclairage"
+  },
+  "session": {
+    "title": "Séance suggérée",
+    "short": "{{reps}} × {{length}} m en sprints de côte à {{grade}} % de moyenne",
+    "medium": "{{reps}} × {{length}} m à {{grade}} % de moyenne",
+    "long": "{{reps}} × {{length}} m à {{grade}} % de moyenne (les {{length}} premiers mètres de la côte)",
+    "detail": "≈ {{time}} par répétition à allure soutenue, retour en trottinant pour récupérer. +{{gain}} m par répétition, +{{total}} m au total.",
+    "warmup": "Échauffez-vous d'abord 15 min en footing."
+  },
+  "footer": {
+    "data": {
+      "fast": "Chemins © OpenMapTiles via OpenFreeMap · © contributeurs OpenStreetMap · Altitude © IGN (RGE ALTI)",
+      "detailed": "Chemins © contributeurs OpenStreetMap (API Overpass) · Altitude © IGN (RGE ALTI)"
+    },
+    "resolution": "Grille d'altitude ≈ {{m}} m"
+  },
+  "access": {
+    "title": "Accès",
+    "hoursBadge": "Horaires du parc",
+    "hours": "Dans un parc avec horaires d'ouverture : {{hours}}",
+    "noHoursCheck": "Les horaires et barrières ne sont pas vérifiés avec les données rapides.",
+    "clear": "Aucune restriction d'accès trouvée sur la carte.",
+    "disclaimer": "D'après OpenStreetMap : la signalisation sur place prime toujours.",
+    "view": "Voir sur OpenStreetMap",
+    "report": "Signaler un problème"
+  },
+  "tabs": {
+    "results": "Côtes",
+    "favorites": "Favoris"
+  },
+  "favorites": {
+    "add": "Ajouter aux favoris",
+    "remove": "Retirer des favoris",
+    "save": "Enregistrer",
+    "saved": "Enregistrée",
+    "note": "Enregistrés dans ce navigateur uniquement. Distances depuis votre lieu de recherche actuel.",
+    "empty": "Aucun favori pour l'instant. Touchez ☆ sur une côte pour la garder ici, même hors ligne."
+  }
+}

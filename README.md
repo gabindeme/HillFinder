@@ -4,6 +4,8 @@
 
 HillFinder is a mobile-first web app for trail runners. Type an address or use your location, and it finds runnable climbs within your chosen radius. It ranks them by what "best" means to you, shows them on a map with an elevation profile, and suggests a repeat session such as *"10 × 235 m at 7.4% avg"*.
 
+**Live app: https://gabindeme.github.io/HillFinder/**: on a phone, use *Add to Home Screen* (iOS: Safari share menu; Android: Chrome menu, *Install app*) to install it as an app that also opens offline.
+
 It was built for Rennes, France, where the best hill may only have 20–30 m of gain. The ranking compares hills with each other, not with mountains, so it always returns the best options available rather than nothing.
 
 ## Features
@@ -25,6 +27,8 @@ It was built for Rennes, France, where the best hill may only have 20–30 m of 
 - **Two data sources:**
   - **Fast** (vector tiles, a few seconds per search)
   - **Detailed** (Overpass: slower, but adds lighting, opening hours and gates)
+- **English and French**, picked from your browser's language with a manual switch; numbers are formatted for the language ("7,4 %").
+- **Installable, offline-capable PWA:** the app, your favourites and the map tiles you've viewed work without a connection.
 - **Speed:** a quick pass shows nearby climbs first, finished results are cached so repeat searches take 1–2 s, and all heavy work runs in a Web Worker.
 
 ## Getting started
@@ -51,7 +55,15 @@ pnpm try                                  # central Rennes, 5 km, Overpass data
 pnpm try 48.1113 -1.68 5 --fast           # lat, lon, radius km, vector tiles
 ```
 
-No API keys are needed. The app is fully static and can be hosted on any static host, such as GitHub Pages or Cloudflare Pages.
+No API keys are needed. The app is fully static.
+
+## Deployment
+
+Every push to `main` runs lint, tests and the build in GitHub Actions (`.github/workflows/deploy.yml`) and publishes `dist/` to GitHub Pages. One-time setup: repository **Settings → Pages → Build and deployment → Source: GitHub Actions**.
+
+The build assumes it is served from `/HillFinder/`. To host at a domain root instead (Cloudflare Pages, Netlify, …), build with `BASE_PATH=/ pnpm build`.
+
+The service worker (vite-plugin-pwa / Workbox) precaches the app shell and caches OpenStreetMap tiles you've viewed. Paths, elevation and results are cached by the app itself in IndexedDB. New versions install automatically on the next visit.
 
 ## How it works
 
@@ -99,9 +111,9 @@ src/
 scripts/      command-line search for development
 ```
 
-## Adding a language
+## Translations
 
-All UI text lives in `src/i18n/locales/en.json`. To add French, copy it to `fr.json`, translate the values and register it in `src/i18n/index.ts`.
+All UI text lives in `src/i18n/locales/` (`en.json`, `fr.json`). To add a language, copy `en.json`, translate the values, then register it in `LANGUAGES` and `resources` in `src/i18n/index.ts`. A test checks that every language has the same keys and `{{placeholders}}`.
 
 ## Limitations
 

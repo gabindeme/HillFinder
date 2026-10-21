@@ -1,10 +1,17 @@
-import type { TFunction } from 'i18next';
+import i18n, { type TFunction } from 'i18next';
 import { travelMinutesTo, type Reach } from '../core/filters';
 import type { Climb } from '../core/types';
 
-export const fmtM = (m: number) => `${Math.round(m)} m`;
-export const fmtGrade = (g: number) => `${g.toFixed(1)}%`;
-export const fmtKm = (m: number) => (m / 1000).toFixed(1);
+// Numbers follow the UI language: "7.4%" in English, "7,4 %" in French.
+const lang = () => i18n.language || 'en';
+
+/** A number with a fixed count of decimals, in the UI language. */
+export const fmtNum = (v: number, digits = 0) =>
+  new Intl.NumberFormat(lang(), { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(v);
+export const fmtM = (m: number) => `${fmtNum(m)} m`;
+export const fmtGrade = (g: number) =>
+  new Intl.NumberFormat(lang(), { style: 'percent', minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(g / 100);
+export const fmtKm = (m: number) => fmtNum(m / 1000, 1);
 
 export function fmtDuration(seconds: number): string {
   const s = Math.round(seconds);
@@ -15,7 +22,7 @@ export function climbName(c: Climb, t: TFunction): string {
   if (c.names.length) return c.names.slice(0, 2).join(' → ');
   const kind = t(`climb.kinds.${c.highway}`, { defaultValue: c.highway });
   if (c.near) return t(`climb.${c.near.kind}`, { kind: capitalize(kind), name: c.near.name });
-  return t('climb.unnamed', { kind });
+  return capitalize(t('climb.unnamed', { kind }));
 }
 
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);

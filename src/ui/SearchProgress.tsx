@@ -5,6 +5,7 @@
  */
 import { useTranslation } from 'react-i18next';
 import type { SearchStage } from '../worker/protocol';
+import { fmtNum } from './format';
 
 interface Props {
   stage: SearchStage;
@@ -25,7 +26,7 @@ export function SearchProgress({ stage, pct, radiusKm, compact, slowSource }: Pr
         <div className="progress-fill" style={{ width: `${Math.max(3, pct)}%` }} />
       </div>
       <p className="progress-label">
-        {t(`status.${stage}`, { km: radiusKm })}
+        {t(`status.${stage}`, { km: fmtNum(radiusKm, radiusKm % 1 ? 1 : 0) })}
         {slowSource && stage !== 'analysis' && !compact && <span className="muted"> {t('status.slow')}</span>}
       </p>
       {!compact && (

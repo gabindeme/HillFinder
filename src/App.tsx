@@ -10,6 +10,8 @@ import { ClimbDetail } from './ui/ClimbDetail';
 import { ClimbList } from './ui/ClimbList';
 import { useFavorites } from './ui/favorites';
 import { FilterBar } from './ui/FilterBar';
+import { fmtNum } from './ui/format';
+import { LanguageSwitch } from './ui/LanguageSwitch';
 import { LocationBar } from './ui/LocationBar';
 import { MapView } from './ui/MapView';
 import { progressTracker } from './ui/progress';
@@ -74,7 +76,12 @@ export default function App() {
       } catch (err) {
         if (id !== latest.current) return;
         const busy = err instanceof SearchError && err.code === 'busy';
-        setStatus({ kind: 'error', message: busy ? t('status.busy') : t('status.error', { message: (err as Error).message }) });
+        const message = !navigator.onLine
+          ? t('status.offline')
+          : busy
+            ? t('status.busy')
+            : t('status.error', { message: (err as Error).message });
+        setStatus({ kind: 'error', message });
       }
     },
     [t],
@@ -142,10 +149,13 @@ export default function App() {
     <div className="app">
       <aside className="panel">
         <header className="header">
-          <h1>
-            ⛰ {t('app.name')}
-            <small>{t('app.tagline')}</small>
-          </h1>
+          <div className="title-row">
+            <h1>
+              ⛰ {t('app.name')}
+              <small>{t('app.tagline')}</small>
+            </h1>
+            <LanguageSwitch />
+          </div>
           <LocationBar onPlace={onPlace} />
           {!origin && (
             <button type="button" className="link" onClick={() => onPlace(RENNES)}>
@@ -197,7 +207,7 @@ export default function App() {
                 />
               )}
               {loading && status.nearbyKm && hasResults && (
-                <p className="muted">{t('status.showingNearby', { km: status.nearbyKm })}</p>
+                <p className="muted">{t('status.showingNearby', { km: fmtNum(status.nearbyKm, 1) })}</p>
               )}
               {status.kind === 'error' && (
                 <p className="message" role="alert">
@@ -214,7 +224,7 @@ export default function App() {
                       <p className="message">{t('status.empty')}</p>
                     ) : (
                       <p className="muted">
-                        {t('status.found', { count: ranked.climbs.length, radius: radiusKm })}
+                        {t('status.found', { count: ranked.climbs.length, radius: fmtNum(radiusKm, radiusKm % 1 ? 1 : 0) })}
                         {ranked.relaxLevel > 0 && <> · {t('status.relaxed')}</>}
                       </p>
                     ))}
@@ -248,7 +258,7 @@ export default function App() {
         {loading && tab === 'results' && (
           <div className="map-pill" role="status">
             <span className="spinner" aria-hidden />
-            {t(`status.${status.stage}`, { km: status.radiusKm })}
+            {t(`status.${status.stage}`, { km: fmtNum(status.radiusKm, status.radiusKm % 1 ? 1 : 0) })}
             <span className="map-pill-pct">{Math.round(status.pct)}%</span>
           </div>
         )}

@@ -3,6 +3,11 @@
     "name": "HillFinder",
     "tagline": "The best hill near you for hill repeats"
   },
+  "lang": {
+    "label": "Language",
+    "en": "EN",
+    "fr": "FR"
+  },
   "location": {
     "placeholder": "Address, town or place",
     "search": "Search",
@@ -79,13 +84,15 @@
     "empty": "No climbs found in this area. Elevation data currently covers France only.",
     "partial": "Some elevation data couldn't be downloaded, so a few hills may be missing. Search again later to fill the gaps.",
     "relaxed": "Few hills match your filters here, so these are the best available.",
-    "found": "{{count}} climbs within {{radius}} km",
-    "hidden_one": "1 climb hidden: not publicly accessible.",
+    "hidden_one": "{{count}} climb hidden: not publicly accessible.",
     "hidden_other": "{{count}} climbs hidden: not publicly accessible.",
     "nearby": "Looking for hills close to you…",
     "download": "Searching the whole {{km}} km area…",
     "analysis": "Picking the best climbs…",
-    "showingNearby": "Showing hills within {{km}} km while the wider search finishes."
+    "showingNearby": "Showing hills within {{km}} km while the wider search finishes.",
+    "offline": "You're offline. Your favourites still work; searching will resume when you're back online.",
+    "found_one": "{{count}} climb within {{radius}} km",
+    "found_other": "{{count}} climbs within {{radius}} km"
   },
   "climb": {
     "unnamed": "Unnamed {{kind}}",
