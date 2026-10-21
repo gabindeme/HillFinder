@@ -125,6 +125,10 @@ scripts/      command-line search for development
 
 All UI text lives in `src/i18n/locales/` (`en.json`, `fr.json`). To add a language, copy `en.json`, translate the values, then register it in `LANGUAGES` and `resources` in `src/i18n/index.ts`. A test checks that every language has the same keys and `{{placeholders}}`.
 
+## Roadmap
+
+Ideas for what's next are in [ROADMAP.md](ROADMAP.md) (in French).
+
 ## Limitations
 
 - **Elevation covers France only.** Elsewhere, searches report that no climbs were found.
