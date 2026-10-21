@@ -1,4 +1,5 @@
 /** Fetching runnable ways from OpenStreetMap through the Overpass API. */
+import { stitchRings } from '../core/naming';
 import { RUNNABLE_HIGHWAYS } from '../core/tags';
 import type { LatLon, OsmWay } from '../core/types';
 import { cacheGet, cacheSet, DAY } from './cache';
@@ -36,9 +37,9 @@ function query(center: LatLon, radius: number): string {
 (
   way(${around})[highway~"^(${hw})$"][area!=yes][foot!=no]
     [service!~"^(driveway|parking_aisle|drive-through)$"];
-  way(${around})[leisure~"^(park|garden|nature_reserve)$"][name];
-  way(${around})[landuse=forest][name];
-  way(${around})[natural=wood][name];
+  wr(${around})[leisure~"^(park|garden|nature_reserve)$"][name];
+  wr(${around})[landuse=forest][name];
+  wr(${around})[natural=wood][name];
 );
 out body geom qt;`;
 }
@@ -49,12 +50,35 @@ interface OverpassElement {
   nodes?: number[];
   geometry?: LatLon[];
   tags?: Record<string, string>;
+  members?: { type: string; role: string; geometry?: LatLon[] }[];
+}
+
+const toLatLon = (g: LatLon[]) => g.map((p) => ({ lat: p.lat, lon: p.lon }));
+
+/**
+ * Overpass elements to ways. Named area relations (e.g. Parc du Thabor is a
+ * multipolygon) become one pseudo-way per outer ring, with a negative id;
+ * they're only used for labelling, never for routing.
+ */
+function toWays(elements: OverpassElement[]): OsmWay[] {
+  const ways: OsmWay[] = [];
+  for (const e of elements) {
+    if (e.type === 'way' && e.nodes && e.geometry) {
+      ways.push({ id: e.id, nodes: e.nodes, geometry: toLatLon(e.geometry), tags: e.tags ?? {} });
+    } else if (e.type === 'relation' && e.members) {
+      const outers = e.members.filter((m) => m.type === 'way' && m.role !== 'inner' && m.geometry);
+      for (const ring of stitchRings(outers.map((m) => toLatLon(m.geometry!)))) {
+        ways.push({ id: -e.id, nodes: [], geometry: ring, tags: e.tags ?? {} });
+      }
+    }
+  }
+  return ways;
 }
 
 export async function fetchWays(center: LatLon, radius: number, signal?: AbortSignal): Promise<OsmWay[]> {
   // Round the centre and radius so small moves of the origin reuse the same download.
   const r = Math.ceil(radius / 500) * 500;
-  const key = `osm2:${center.lat.toFixed(3)}:${center.lon.toFixed(3)}:${r}`;
+  const key = `osm3:${center.lat.toFixed(3)}:${center.lon.toFixed(3)}:${r}`;
   const cached = await cacheGet<OsmWay[]>(key, MAX_AGE);
   if (cached) return cached;
 
@@ -79,15 +103,7 @@ async function attempt(url: string, body: URLSearchParams, key: string, signal?:
   const res = await fetch(url, { method: 'POST', body, signal: signal ? AbortSignal.any([signal, timeout]) : timeout });
   if (!res.ok) throw new Error(`Overpass ${res.status}`);
   const json = (await res.json()) as { elements: OverpassElement[] };
-  const ways: OsmWay[] = json.elements
-    .filter((e) => e.type === 'way' && e.nodes && e.geometry)
-    .map((e) => ({
-      id: e.id,
-      nodes: e.nodes!,
-      // Overpass adds extra fields; keep only what we use.
-      geometry: e.geometry!.map((g) => ({ lat: g.lat, lon: g.lon })),
-      tags: e.tags ?? {},
-    }));
+  const ways = toWays(json.elements);
   await cacheSet(key, ways);
   return ways;
 }

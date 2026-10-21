@@ -4,7 +4,7 @@
  * "Footpath near Rue Martenot" is far more useful than "Unnamed footpath".
  */
 import { localProjection } from './geo';
-import type { Climb, OsmWay } from './types';
+import type { Climb, LatLon, OsmWay } from './types';
 
 /** Named areas worth mentioning; fetched alongside the paths (see overpass.ts). */
 const AREA_TAGS = ['leisure', 'landuse', 'natural'] as const;
@@ -14,6 +14,36 @@ const CELL = 50;
 
 export function isNamedArea(w: OsmWay): boolean {
   return !!w.tags.name && !w.tags.highway && AREA_TAGS.some((k) => k in w.tags) && w.geometry.length >= 4;
+}
+
+/**
+ * Joins the outer member lines of a multipolygon relation into closed rings.
+ * Mappers often split a park outline into several ways; we chain pieces whose
+ * ends meet (reversing them as needed). Unclosable leftovers are dropped.
+ */
+export function stitchRings(lines: LatLon[][]): LatLon[][] {
+  const same = (a: LatLon, b: LatLon) => Math.abs(a.lat - b.lat) < 1e-7 && Math.abs(a.lon - b.lon) < 1e-7;
+  const pool = lines.filter((l) => l.length >= 2).map((l) => [...l]);
+  const rings: LatLon[][] = [];
+  while (pool.length) {
+    const ring = pool.pop()!;
+    let grew = true;
+    while (!same(ring[0], ring[ring.length - 1]) && grew) {
+      grew = false;
+      const end = ring[ring.length - 1];
+      for (let i = 0; i < pool.length; i++) {
+        const l = pool[i];
+        if (same(l[0], end)) ring.push(...l.slice(1));
+        else if (same(l[l.length - 1], end)) ring.push(...[...l].reverse().slice(1));
+        else continue;
+        pool.splice(i, 1);
+        grew = true;
+        break;
+      }
+    }
+    if (ring.length >= 4 && same(ring[0], ring[ring.length - 1])) rings.push(ring);
+  }
+  return rings;
 }
 
 /** Ray-casting point-in-polygon on a closed ring, in projected metres. */

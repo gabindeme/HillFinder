@@ -3,7 +3,7 @@ import { detectClimbs, maxGrade, scanAscents } from './climbs';
 import { dedupe } from './dedupe';
 import { DEFAULT_FILTERS } from './filters';
 import { buildStrokes, splitIntoEdges } from './graph';
-import { labelUnnamed } from './naming';
+import { labelUnnamed, stitchRings } from './naming';
 import { findCandidates } from './pipeline';
 import { reverseProfile, STEP, strokeProfiles } from './profile';
 import { rankClimbs } from './scoring';
@@ -184,5 +184,14 @@ describe('dedupe', () => {
   it('keeps one route per hill but keeps separate hills', () => {
     expect(dedupe([line(0), line(120)])).toHaveLength(1); // parallel paths up the same slope
     expect(dedupe([line(0), line(800)])).toHaveLength(2);
+  });
+});
+
+describe('stitchRings', () => {
+  it('joins split outline pieces, reversing where needed', () => {
+    const a = pt(0, 0), b = pt(0, 100), c = pt(100, 100), d = pt(100, 0);
+    const rings = stitchRings([[a, b], [c, b], [c, d, a]]);
+    expect(rings).toHaveLength(1);
+    expect(rings[0]).toHaveLength(5);
   });
 });
