@@ -1,0 +1,100 @@
+{
+  "app": {
+    "name": "HillFinder",
+    "tagline": "The best hill near you for hill repeats"
+  },
+  "location": {
+    "placeholder": "Address, town or place",
+    "search": "Search",
+    "useMyLocation": "Use my location",
+    "locating": "Locating…",
+    "permissionTitle": "Use your location?",
+    "permissionBody": "Your browser will ask for permission. Your position is only used to search for hills around you; it isn't stored or shared.",
+    "allow": "Continue",
+    "cancel": "Cancel",
+    "denied": "Location access was denied. Type an address instead.",
+    "unavailable": "Couldn't get your location. Type an address instead.",
+    "noResults": "No place found for “{{query}}”.",
+    "error": "Address search failed. Please try again.",
+    "tryExample": "Try it with {{place}}",
+    "myPosition": "My location"
+  },
+  "filters": {
+    "radius": "Radius",
+    "priority": "Best =",
+    "priorities": {
+      "balanced": "Balanced",
+      "steepest": "Steepest",
+      "longest": "Longest",
+      "gain": "Most elevation gain",
+      "closest": "Closest",
+      "trail": "Most trail-like"
+    }
+  },
+  "status": {
+    "download": "Downloading paths & elevation ({{done}}/{{total}})…",
+    "slow": "The first search in an area can take up to a minute; later ones are cached.",
+    "analysis": "Finding climbs…",
+    "error": "Search failed: {{message}}",
+    "busy": "The OpenStreetMap servers are busy right now. Please try again in a few minutes.",
+    "retry": "Retry",
+    "empty": "No climbs found in this area. Elevation data currently covers France only.",
+    "partial": "Some elevation data couldn't be downloaded, so a few hills may be missing. Search again later to fill the gaps.",
+    "relaxed": "Few hills match your filters here, so these are the best available.",
+    "found": "{{count}} climbs within {{radius}} km"
+  },
+  "climb": {
+    "unnamed": "Unnamed {{kind}}",
+    "in": "{{kind}} in {{name}}",
+    "near": "{{kind}} near {{name}}",
+    "kinds": {
+      "footway": "footpath",
+      "path": "path",
+      "track": "track",
+      "cycleway": "cycle path",
+      "bridleway": "bridleway",
+      "pedestrian": "pedestrian street",
+      "residential": "street",
+      "living_street": "street",
+      "service": "service road",
+      "unclassified": "road",
+      "tertiary": "road",
+      "secondary": "road",
+      "primary": "main road"
+    },
+    "length": "Length",
+    "gain": "Gain",
+    "avgGrade": "Avg",
+    "maxGrade": "Max",
+    "away": "{{km}} km away",
+    "trail": "Trail",
+    "road": "Road",
+    "mixed": "Mixed",
+    "score": "Score",
+    "back": "All climbs",
+    "openMaps": "Directions",
+    "why": "Why this score",
+    "profile": "Elevation profile"
+  },
+  "factors": {
+    "steepness": "Steepness",
+    "gain": "Elevation gain",
+    "length": "Length",
+    "proximity": "Proximity",
+    "trail": "Trail surface",
+    "safety": "Quiet / car-free",
+    "lit": "Lighting"
+  },
+  "session": {
+    "title": "Suggested session",
+    "short": "{{reps}} × {{length}} m hill sprints at {{grade}}% avg",
+    "medium": "{{reps}} × {{length}} m at {{grade}}% avg",
+    "long": "{{reps}} × {{length}} m at {{grade}}% avg (first {{length}} m of the climb)",
+    "detail": "≈ {{time}} per rep at hard effort, jog back down to recover. +{{gain}} m per rep, +{{total}} m total.",
+    "warmup": "Warm up 15 min easy first."
+  },
+  "footer": {
+    "data": "Map & paths © OpenStreetMap contributors · Elevation © IGN (RGE ALTI)",
+    "resolution": "Elevation grid ≈ {{m}} m"
+  }
+}

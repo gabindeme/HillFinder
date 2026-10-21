@@ -73,13 +73,30 @@ async function fetchTile(level: number, tx: number, ty: number, signal?: AbortSi
     BBOX: [south, west, south + s.lat, west + s.lon].map((v) => v.toFixed(6)).join(','),
     WIDTH: String(SIZE), HEIGHT: String(SIZE), FORMAT: 'image/x-bil;bits=32',
   });
-  const res = await fetch(`${WMS}?${params}`, { signal });
-  if (!res.ok) throw new Error(`IGN elevation ${res.status}`);
-  const buf = await res.arrayBuffer();
-  if (buf.byteLength !== SIZE * SIZE * 4) throw new Error('IGN elevation: unexpected tile size');
+  const buf = await fetchWithRetry(`${WMS}?${params}`, signal);
   await cacheSet(key, buf);
   // BIL from this service is little-endian float32, rows from north to south.
   return { level, tx, ty, data: new Float32Array(buf) };
+}
+
+/**
+ * The service occasionally answers 400/429/5xx under load (seen in testing),
+ * so retry a few times with backoff before giving up on a tile.
+ */
+async function fetchWithRetry(url: string, signal?: AbortSignal, attempts = 3): Promise<ArrayBuffer> {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      const res = await fetch(url, { signal });
+      if (!res.ok) throw new Error(`IGN elevation ${res.status}`);
+      const buf = await res.arrayBuffer();
+      // Errors sometimes come back as a 200 XML document instead of the grid.
+      if (buf.byteLength !== SIZE * SIZE * 4) throw new Error('IGN elevation: unexpected response');
+      return buf;
+    } catch (err) {
+      if (signal?.aborted || attempt >= attempts) throw err;
+      await new Promise((r) => setTimeout(r, 600 * 2 ** attempt));
+    }
+  }
 }
 
 /** Run async jobs with bounded concurrency, reporting progress. */
@@ -102,6 +119,8 @@ export interface ElevationGrid {
   sampler: ElevationSampler;
   level: number;
   resolution: number;
+  /** Tiles that still failed after retries; their area has no elevation. */
+  missingTiles: number;
 }
 
 export async function loadElevation(
@@ -111,11 +130,14 @@ export async function loadElevation(
 ): Promise<ElevationGrid> {
   const level = chooseLevel(bbox);
   const wanted = tilesFor(bbox, level);
-  const tiles = await pool(
-    wanted.map(({ tx, ty }) => () => fetchTile(level, tx, ty, signal)),
+  // A failed tile shouldn't sink the whole search: climbs elsewhere are still valid.
+  const results = await pool(
+    wanted.map(({ tx, ty }) => () => fetchTile(level, tx, ty, signal).catch((err: unknown) => err as Error)),
     CONCURRENCY,
     (n) => onProgress?.(n, wanted.length),
   );
+  const tiles = results.filter((r): r is Tile => !(r instanceof Error));
+  if (!tiles.length) throw results[0] as Error;
   const byKey = new Map(tiles.map((t) => [`${t.tx}:${t.ty}`, t]));
   const s = spans(level);
 
@@ -139,5 +161,5 @@ export async function loadElevation(
     return (v00 * (1 - fc) + v01 * fc) * (1 - fr) + (v10 * (1 - fc) + v11 * fc) * fr;
   };
 
-  return { sampler, level, resolution: metresPerPixel(level) };
+  return { sampler, level, resolution: metresPerPixel(level), missingTiles: results.length - tiles.length };
 }

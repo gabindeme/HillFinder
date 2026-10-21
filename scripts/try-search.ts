@@ -41,7 +41,7 @@ for (const priority of ['balanced', 'steepest'] as const) {
   for (const c of climbs.slice(0, 10)) {
     const s = suggestSession(c);
     console.log(
-      `#${c.rank} ${c.score.toFixed(0).padStart(3)}  ${(c.names.join(' / ') || '(unnamed)').slice(0, 45).padEnd(45)}` +
+      `#${c.rank} ${c.score.toFixed(0).padStart(3)}  ${(c.names.join(' / ') || (c.near ? `${c.near.kind} ${c.near.name}` : '(unnamed)')).slice(0, 45).padEnd(45)}` +
         ` ${c.length.toFixed(0).padStart(5)} m  +${c.gain.toFixed(1).padStart(5)} m  avg ${c.avgGrade.toFixed(1)}%` +
         `  max ${c.maxGrade.toFixed(1)}%  ${(c.distance / 1000).toFixed(1)} km  trail ${c.trail.toFixed(2)}` +
         `  → ${s.reps}×${s.repLength} m  @${c.coords[0].lat.toFixed(5)},${c.coords[0].lon.toFixed(5)}`,

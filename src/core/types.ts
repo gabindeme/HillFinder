@@ -73,4 +73,6 @@ export interface Climb {
   names: string[];
   /** Most common OSM highway type along the climb (e.g. "footway"). */
   highway: string;
+  /** For unnamed climbs: the park it's in, or the nearest named street. */
+  near?: { kind: 'in' | 'near'; name: string };
 }

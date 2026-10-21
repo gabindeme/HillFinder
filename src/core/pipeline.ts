@@ -6,6 +6,7 @@
  */
 import { detectClimbs, maxGrade } from './climbs';
 import { haversine } from './geo';
+import { labelUnnamed } from './naming';
 import { buildStrokes, splitIntoEdges } from './graph';
 import { reverseProfile, strokeProfiles } from './profile';
 import { classifyWay, isRunnable } from './tags';
@@ -84,5 +85,6 @@ export function findCandidates(
     });
   });
   onProgress?.(strokes.length, strokes.length);
+  labelUnnamed(climbs, rawWays);
   return climbs;
 }

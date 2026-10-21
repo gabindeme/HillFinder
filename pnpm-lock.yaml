@@ -27,6 +27,9 @@ importers:
         specifier: ^17.1.0
         version: 17.1.0(i18next@26.5.2(typescript@7.0.2))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(typescript@7.0.2)
     devDependencies:
+      '@types/geojson':
+        specifier: ^7946.0.16
+        version: 7946.0.16
       '@types/node':
         specifier: ^24.19.2
         version: 24.19.2

@@ -1,122 +1,148 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { rankClimbs } from './core/scoring';
+import type { Climb } from './core/types';
+import type { Place } from './data/nominatim';
+import { SearchError, searchClimbs, type SearchProgress } from './data/searchClient';
+import { ClimbDetail } from './ui/ClimbDetail';
+import { ClimbList } from './ui/ClimbList';
+import { FilterBar } from './ui/FilterBar';
+import { LocationBar } from './ui/LocationBar';
+import { MapView } from './ui/MapView';
+import { useFilters, useStored } from './ui/storage';
 
-function App() {
-  const [count, setCount] = useState(0)
+/** Development test location (and the "try it" example): central Rennes. */
+const RENNES: Place = { lat: 48.1113, lon: -1.68, label: 'Rennes, France' };
+
+type Status =
+  | { kind: 'idle' }
+  | { kind: 'loading'; progress: SearchProgress | null }
+  | { kind: 'error'; message: string }
+  | { kind: 'done'; partial: boolean };
+
+export default function App() {
+  const { t } = useTranslation();
+  const [origin, setOrigin] = useStored<Place | null>('hillfinder.origin', null);
+  const [filters, setFilters] = useFilters();
+  // Radius the current candidates were searched with. Shrinking the slider
+  // just filters them; growing it beyond this triggers a new search.
+  const searchRadius = useRef(filters.radiusKm);
+  const [candidates, setCandidates] = useState<Climb[] | null>(null);
+  const [resolution, setResolution] = useState<number | null>(null);
+  const [status, setStatus] = useState<Status>({ kind: 'idle' });
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const latest = useRef(0);
+
+  const run = useCallback(async (place: Place, radiusKm: number) => {
+    const id = ++latest.current;
+    searchRadius.current = radiusKm;
+    setStatus({ kind: 'loading', progress: null });
+    setSelectedId(null);
+    try {
+      const out = await searchClimbs(place, radiusKm, (progress) => {
+        if (id === latest.current) setStatus({ kind: 'loading', progress });
+      });
+      if (id !== latest.current) return;
+      setCandidates(out.candidates);
+      setResolution(out.resolution);
+      setStatus({ kind: 'done', partial: out.missingTiles > 0 });
+    } catch (err) {
+      if (id !== latest.current) return;
+      const busy = err instanceof SearchError && err.code === 'busy';
+      setStatus({ kind: 'error', message: busy ? t('status.busy') : t('status.error', { message: (err as Error).message }) });
+    }
+  }, [t]);
+
+  // Re-run the last search on startup (served from cache when recent).
+  const restored = useRef(origin);
+  useEffect(() => {
+    if (restored.current) void run(restored.current, searchRadius.current);
+  }, [run]);
+
+  const onPlace = (place: Place) => {
+    setOrigin(place);
+    void run(place, filters.radiusKm);
+  };
+
+  const onRadiusCommit = (km: number) => {
+    if (origin && km > searchRadius.current) void run(origin, km);
+  };
+
+  const ranked = useMemo(() => (candidates ? rankClimbs(candidates, filters) : null), [candidates, filters]);
+  const selected = ranked?.climbs.find((c) => c.id === selectedId) ?? null;
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div className="app">
+      <aside className="panel">
+        <header className="header">
+          <h1>
+            ⛰ {t('app.name')}
+            <small>{t('app.tagline')}</small>
+          </h1>
+          <LocationBar onPlace={onPlace} />
+          {!origin && (
+            <button type="button" className="link" onClick={() => onPlace(RENNES)}>
+              {t('location.tryExample', { place: 'Rennes' })}
+            </button>
+          )}
+        </header>
 
-      <div className="ticks"></div>
+        <FilterBar filters={filters} onChange={setFilters} onRadiusCommit={onRadiusCommit} />
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
+        <div className="results" aria-live="polite">
+          {status.kind === 'loading' && <StatusLine progress={status.progress} />}
+          {status.kind === 'error' && (
+            <p className="message" role="alert">
+              {status.message}{' '}
+              <button type="button" className="link" onClick={() => origin && run(origin, searchRadius.current)}>
+                {t('status.retry')}
+              </button>
+            </p>
+          )}
+          {status.kind === 'done' && ranked && !selected && (
+            <>
+              {ranked.climbs.length === 0 ? (
+                <p className="message">{t('status.empty')}</p>
+              ) : (
+                <p className="muted">
+                  {t('status.found', { count: ranked.climbs.length, radius: filters.radiusKm })}
+                  {ranked.relaxLevel > 0 && <> · {t('status.relaxed')}</>}
+                </p>
+              )}
+              {status.partial && <p className="message">{t('status.partial')}</p>}
+              <ClimbList climbs={ranked.climbs} onSelect={setSelectedId} />
+            </>
+          )}
+          {status.kind === 'done' && selected && <ClimbDetail climb={selected} onBack={() => setSelectedId(null)} />}
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+        <footer className="footer muted">
+          {t('footer.data')}
+          {resolution && <> · {t('footer.resolution', { m: resolution.toFixed(0) })}</>}
+        </footer>
+      </aside>
+
+      <MapView
+        origin={origin}
+        radiusKm={filters.radiusKm}
+        climbs={ranked?.climbs ?? []}
+        selectedId={selectedId}
+        onSelect={setSelectedId}
+      />
+    </div>
+  );
 }
 
-export default App
+function StatusLine({ progress }: { progress: SearchProgress | null }) {
+  const { t } = useTranslation();
+  const stage = progress?.stage ?? 'download';
+  return (
+    <div>
+      <p className="status">
+        <span className="spinner" aria-hidden />{' '}
+        {t(`status.${stage}`, { done: progress?.done ?? 0, total: progress?.total ?? 1 })}
+      </p>
+      {stage === 'download' && <p className="muted">{t('status.slow')}</p>}
+    </div>
+  );
+}

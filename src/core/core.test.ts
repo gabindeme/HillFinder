@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { detectClimbs, maxGrade, scanAscents } from './climbs';
+import { dedupe } from './dedupe';
 import { DEFAULT_FILTERS } from './filters';
 import { buildStrokes, splitIntoEdges } from './graph';
+import { labelUnnamed } from './naming';
 import { findCandidates } from './pipeline';
 import { reverseProfile, STEP, strokeProfiles } from './profile';
 import { rankClimbs } from './scoring';
@@ -145,5 +147,42 @@ describe('session', () => {
     expect(long.kind).toBe('long');
     expect(long.repLength).toBe(600);
     expect(long.avgGrade).toBeCloseTo(5, 1);
+  });
+});
+
+describe('naming', () => {
+  const climb = (coords: LatLon[]): Climb =>
+    ({ coords, names: [], highway: 'footway' }) as unknown as Climb;
+
+  it('labels an unnamed climb with the park it is in', () => {
+    const park: OsmWay = {
+      id: 9, nodes: [1, 2, 3, 4, 1],
+      geometry: [pt(-100, -100), pt(-100, 100), pt(300, 100), pt(300, -100), pt(-100, -100)],
+      tags: { leisure: 'park', name: 'Parc du Thabor' },
+    };
+    const c = climb([pt(0, 0), pt(100, 0), pt(200, 0)]);
+    labelUnnamed([c], [park]);
+    expect(c.near).toEqual({ kind: 'in', name: 'Parc du Thabor' });
+  });
+
+  it('falls back to the nearest named street', () => {
+    const street: OsmWay = { id: 8, nodes: [1, 2], geometry: [pt(100, 60), pt(100, 300)], tags: { highway: 'residential', name: 'Rue Martenot' } };
+    const c = climb([pt(0, 0), pt(100, 0), pt(200, 0)]);
+    labelUnnamed([c], [street]);
+    expect(c.near).toEqual({ kind: 'near', name: 'Rue Martenot' });
+  });
+});
+
+describe('dedupe', () => {
+  const line = (dx: number, len = 200): Climb =>
+    ({ coords: [pt(0, dx), pt(len / 2, dx), pt(len, dx)] }) as unknown as Climb;
+
+  it('drops a sidewalk running alongside the road', () => {
+    expect(dedupe([line(0), line(8)])).toHaveLength(1);
+  });
+
+  it('keeps one route per hill but keeps separate hills', () => {
+    expect(dedupe([line(0), line(120)])).toHaveLength(1); // parallel paths up the same slope
+    expect(dedupe([line(0), line(800)])).toHaveLength(2);
   });
 });

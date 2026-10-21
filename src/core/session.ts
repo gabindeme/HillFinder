@@ -55,7 +55,7 @@ export function suggestSession(climb: Pick<Climb, 'length' | 'gain' | 'profile'>
 
   return {
     reps,
-    repLength: Math.round(repLength / 10) * 10,
+    repLength: Math.round(repLength / 5) * 5,
     repGain: Math.round(repGain),
     avgGrade: Math.round(grade * 1000) / 10,
     repSeconds,
