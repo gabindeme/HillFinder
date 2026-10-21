@@ -72,9 +72,7 @@
     "noHours": "Needs the detailed data source (below)"
   },
   "status": {
-    "download": "Downloading paths & elevation ({{done}}/{{total}})…",
-    "slow": "The first search in an area can take up to a minute; later ones are cached.",
-    "analysis": "Finding climbs…",
+    "slow": "The first detailed search in an area can take a minute; it's cached afterwards.",
     "error": "Search failed: {{message}}",
     "busy": "The OpenStreetMap servers are busy right now. Please try again in a few minutes.",
     "retry": "Retry",
@@ -83,7 +81,11 @@
     "relaxed": "Few hills match your filters here, so these are the best available.",
     "found": "{{count}} climbs within {{radius}} km",
     "hidden_one": "1 climb hidden: not publicly accessible.",
-    "hidden_other": "{{count}} climbs hidden: not publicly accessible."
+    "hidden_other": "{{count}} climbs hidden: not publicly accessible.",
+    "nearby": "Looking for hills close to you…",
+    "download": "Searching the whole {{km}} km area…",
+    "analysis": "Picking the best climbs…",
+    "showingNearby": "Showing hills within {{km}} km while the wider search finishes."
   },
   "climb": {
     "unnamed": "Unnamed {{kind}}",
@@ -154,5 +156,17 @@
     "disclaimer": "From OpenStreetMap: signs on site always take precedence.",
     "view": "View on OpenStreetMap",
     "report": "Report a problem"
+  },
+  "tabs": {
+    "results": "Climbs",
+    "favorites": "Favourites"
+  },
+  "favorites": {
+    "add": "Add to favourites",
+    "remove": "Remove from favourites",
+    "save": "Save",
+    "saved": "Saved",
+    "note": "Saved in this browser only. Distances are from your current search location.",
+    "empty": "No favourites yet. Tap ☆ on a climb to keep it here, even offline."
   }
 }

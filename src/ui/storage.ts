@@ -7,8 +7,9 @@ function read<T>(key: string, fallback: T): T {
     const raw = localStorage.getItem(key);
     if (!raw) return fallback;
     const parsed = JSON.parse(raw) as T;
-    // Merge so new filter fields added in later versions get their defaults.
-    return typeof fallback === 'object' && fallback !== null ? { ...fallback, ...parsed } : parsed;
+    // Merge plain objects so fields added in later versions get their defaults.
+    const isPlainObject = (v: unknown) => typeof v === 'object' && v !== null && !Array.isArray(v);
+    return isPlainObject(fallback) && isPlainObject(parsed) ? { ...fallback, ...parsed } : parsed;
   } catch {
     return fallback;
   }

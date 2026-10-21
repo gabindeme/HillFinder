@@ -14,10 +14,13 @@ export interface SearchRequest {
   source: DataSource;
 }
 
-export type SearchStage = 'download' | 'analysis';
+/** 'nearby' = quick first pass around the origin; then 'download' and 'analysis' for the full area. */
+export type SearchStage = 'nearby' | 'download' | 'analysis';
 
 export type WorkerMessage =
   /** For 'download', done/total count elevation tiles plus path tiles (or one step for Overpass). */
   | { type: 'progress'; id: number; stage: SearchStage; done: number; total: number }
+  /** Climbs within `nearbyKm`, posted before the full search finishes. */
+  | { type: 'partial'; id: number; candidates: Climb[]; resolution: number; nearbyKm: number }
   | { type: 'result'; id: number; candidates: Climb[]; resolution: number; missingTiles: number }
   | { type: 'error'; id: number; message: string; code?: 'busy' };

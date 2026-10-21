@@ -75,12 +75,38 @@ button.link {
   min-height: 100dvh;
 }
 
-.map {
-  height: 45dvh;
-  min-height: 260px;
+.map-wrap {
   position: sticky;
   top: 0;
   z-index: 1;
+}
+
+.map {
+  height: 45dvh;
+  min-height: 260px;
+}
+
+.map-pill {
+  position: absolute;
+  left: 50%;
+  bottom: 2.5rem;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: calc(100% - 2rem);
+  padding: 0.5rem 0.9rem;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.95);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.2);
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.map-pill-pct {
+  color: var(--green);
+  font-variant-numeric: tabular-nums;
 }
 
 .panel {
@@ -102,9 +128,11 @@ button.link {
     overflow-y: auto;
     border-right: 1px solid var(--border);
   }
-  .map {
+  .map-wrap {
     flex: 1;
-    height: auto;
+  }
+  .map {
+    height: 100%;
   }
 }
 
@@ -625,4 +653,214 @@ button.link {
 .access a {
   color: var(--green);
   font-weight: 600;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+}
+
+.tabs button {
+  flex: 1;
+  background: none;
+  color: var(--muted);
+  border-radius: 0;
+  border-bottom: 3px solid transparent;
+  font-weight: 600;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.tabs button[aria-selected='true'] {
+  color: var(--green);
+  border-bottom-color: var(--green);
+}
+
+.empty {
+  text-align: center;
+  color: var(--muted);
+  padding: 2rem 1rem;
+}
+
+/* Favourite star */
+.climb-item {
+  display: flex;
+  align-items: stretch;
+  gap: 0.4rem;
+}
+
+.climb-item .climb-card {
+  flex: 1;
+  min-width: 0;
+}
+
+.star {
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 1.3rem;
+  padding: 0 0.7rem;
+  min-width: 44px;
+  line-height: 1;
+}
+
+.star.on {
+  color: #f9a825;
+}
+
+.star.with-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 1.1rem;
+}
+
+.star.with-label span {
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+.detail-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Search progress */
+.search-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.progress-track {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--border);
+  overflow: hidden;
+}
+
+.search-progress.compact .progress-track {
+  height: 3px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--green);
+  border-radius: 3px;
+  transition: width 0.4s ease-out;
+  /* A moving sheen keeps the bar alive between progress updates. */
+  background-image: linear-gradient(90deg, transparent 0%, rgb(255 255 255 / 0.45) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: sheen 1.4s linear infinite;
+}
+
+@keyframes sheen {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.progress-label {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.skeleton-list {
+  list-style: none;
+  margin: 0.25rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.skeleton-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.9rem 1rem;
+}
+
+.sk-dot,
+.sk-line {
+  background: linear-gradient(90deg, #eceff1 25%, #f5f7f8 50%, #eceff1 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s ease-in-out infinite;
+}
+
+.sk-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.sk-lines {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.sk-line {
+  height: 11px;
+  border-radius: 6px;
+}
+
+.sk-line.short {
+  width: 40%;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.updating {
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+/* Pulsing origin while searching */
+.origin-marker.searching::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 2px solid #1565c0;
+  animation: pulse 1.6s ease-out infinite;
+}
+
+@keyframes pulse {
+  from {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  to {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progress-fill,
+  .sk-dot,
+  .sk-line,
+  .origin-marker.searching::after {
+    animation: none;
+  }
 }

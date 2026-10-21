@@ -7,14 +7,18 @@ interface Props {
   climbs: RankedClimb[];
   reach: Reach;
   onSelect: (id: string) => void;
+  isFavorite: (c: RankedClimb) => boolean;
+  onToggleFavorite: (c: RankedClimb) => void;
+  /** Scores only make sense within one search; favourites hide them. */
+  showScore: boolean;
 }
 
-export function ClimbList({ climbs, reach, onSelect }: Props) {
+export function ClimbList({ climbs, reach, onSelect, isFavorite, onToggleFavorite, showScore }: Props) {
   const { t } = useTranslation();
   return (
     <ol className="climb-list">
       {climbs.map((c) => (
-        <li key={c.id}>
+        <li key={c.id} className="climb-item">
           <button type="button" className="climb-card" onClick={() => onSelect(c.id)}>
             <span className="rank" style={{ background: gradeColor(c.avgGrade) }}>
               {c.rank}
@@ -30,12 +34,26 @@ export function ClimbList({ climbs, reach, onSelect }: Props) {
                 {c.access?.hours && <span className="tag">🕗 {t('access.hoursBadge')}</span>}
               </span>
             </span>
-            <span className="score" title={t('climb.score')}>
-              {Math.round(c.score)}
-            </span>
+            {showScore && (
+              <span className="score" title={t('climb.score')}>
+                {Math.round(c.score)}
+              </span>
+            )}
           </button>
+          <StarButton on={isFavorite(c)} onClick={() => onToggleFavorite(c)} />
         </li>
       ))}
     </ol>
+  );
+}
+
+export function StarButton({ on, onClick, label }: { on: boolean; onClick: () => void; label?: boolean }) {
+  const { t } = useTranslation();
+  const text = on ? t('favorites.remove') : t('favorites.add');
+  return (
+    <button type="button" className={`star${on ? ' on' : ''}${label ? ' with-label' : ''}`} aria-pressed={on} aria-label={text} title={text} onClick={onClick}>
+      {on ? '★' : '☆'}
+      {label && <span>{on ? t('favorites.saved') : t('favorites.save')}</span>}
+    </button>
   );
 }

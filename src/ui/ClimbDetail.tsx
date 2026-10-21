@@ -3,6 +3,7 @@ import type { Reach } from '../core/filters';
 import type { RankedClimb } from '../core/scoring';
 import { suggestSession } from '../core/session';
 import { climbName, fmtAway, fmtDuration, fmtGrade, fmtM, surfaceLabel } from './format';
+import { StarButton } from './ClimbList';
 import { ProfileChart } from './ProfileChart';
 
 interface Props {
@@ -12,10 +13,12 @@ interface Props {
   detailed: boolean;
   /** Show the share of lit path. */
   showLit: boolean;
+  favorite: boolean;
+  onToggleFavorite: () => void;
   onBack: () => void;
 }
 
-export function ClimbDetail({ climb, reach, detailed, showLit, onBack }: Props) {
+export function ClimbDetail({ climb, reach, detailed, showLit, favorite, onToggleFavorite, onBack }: Props) {
   const { t } = useTranslation();
   const session = suggestSession(climb);
   const start = climb.coords[0];
@@ -25,9 +28,12 @@ export function ClimbDetail({ climb, reach, detailed, showLit, onBack }: Props) 
 
   return (
     <article className="climb-detail">
-      <button type="button" className="link back" onClick={onBack}>
-        ← {t('climb.back')}
-      </button>
+      <div className="detail-top">
+        <button type="button" className="link back" onClick={onBack}>
+          ← {t('climb.back')}
+        </button>
+        <StarButton on={favorite} onClick={onToggleFavorite} label />
+      </div>
       <h2>
         <span className="rank-inline">#{climb.rank}</span> {climbName(climb, t)}
       </h2>

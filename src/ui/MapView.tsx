@@ -44,6 +44,8 @@ interface Props {
   radiusKm: number;
   climbs: RankedClimb[];
   selectedId: string | null;
+  /** A search is running: the origin marker pulses. */
+  searching: boolean;
   onSelect: (id: string) => void;
 }
 
@@ -77,7 +79,7 @@ function circle(center: LatLon, radiusKm: number): Feature {
 
 const empty: FeatureCollection = { type: 'FeatureCollection', features: [] };
 
-export function MapView({ origin, radiusKm, climbs, selectedId, onSelect }: Props) {
+export function MapView({ origin, radiusKm, climbs, selectedId, searching, onSelect }: Props) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const markers = useRef<Marker[]>([]);
@@ -184,6 +186,10 @@ export function MapView({ origin, radiusKm, climbs, selectedId, onSelect }: Prop
     };
     whenLoaded(apply);
   }, [climbs, selectedId]);
+
+  useEffect(() => {
+    originMarker.current?.getElement().classList.toggle('searching', searching);
+  }, [searching, origin]);
 
   return <div ref={container} className="map" />;
 }

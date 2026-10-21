@@ -257,8 +257,20 @@ async function tileUrlTemplate(): Promise<string> {
   return template;
 }
 
-async function fetchTile(template: string, x: number, y: number, signal?: AbortSignal): Promise<ArrayBuffer> {
+/** Shared in-flight downloads (see ignElevation.ts). */
+const inFlight = new Map<string, Promise<ArrayBuffer>>();
+
+function fetchTile(template: string, x: number, y: number, signal?: AbortSignal): Promise<ArrayBuffer> {
   const url = template.replace('{z}', String(Z)).replace('{x}', String(x)).replace('{y}', String(y));
+  let p = inFlight.get(url);
+  if (!p) {
+    p = fetchTileUncached(url, signal).finally(() => inFlight.delete(url));
+    inFlight.set(url, p);
+  }
+  return p;
+}
+
+async function fetchTileUncached(url: string, signal?: AbortSignal): Promise<ArrayBuffer> {
   const key = `omt:${url}`;
   const cached = await cacheGet<ArrayBuffer>(key, MAX_AGE);
   if (cached) return cached;
@@ -288,6 +300,10 @@ export async function fetchWaysFromTiles(
   for (let x = lonToTileX(bbox.west); x <= lonToTileX(bbox.east); x++) {
     for (let y = latToTileY(bbox.north); y <= latToTileY(bbox.south); y++) jobs.push([x, y]);
   }
+  // Centre tiles first (see ignElevation.ts).
+  const cx = (jobs[0][0] + jobs[jobs.length - 1][0]) / 2;
+  const cy = (jobs[0][1] + jobs[jobs.length - 1][1]) / 2;
+  jobs.sort((a, b) => Math.hypot(a[0] - cx, a[1] - cy) - Math.hypot(b[0] - cx, b[1] - cy));
   const ways: OsmWay[] = [];
   let next = 0;
   let done = 0;
